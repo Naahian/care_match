@@ -1,0 +1,24 @@
+{
+    "files.exclude": {
+        "**/flutter/ephemeral": true,
+        "**/Flutter/ephemeral": true,
+        "**/.symlinks": true,
+        "**/.plugin_symlinks": true,
+        ".dart_tool": true,
+        ".idea": true,
+        "android": true,
+        "build": true,
+        "ios": true,
+        "linux": true,
+        "macos": true,
+        "web": true,
+        "windows": true,
+        ".flutter-plugins-dependencies": true,
+        ".gitignore": true,
+        ".metadata": true,
+        "analysis_options.yaml": true,
+        "care_match.iml": true,
+        "pubspec.lock": true,
+        "README.md": true
+    }
+}
