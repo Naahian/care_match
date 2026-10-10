@@ -1,0 +1,31 @@
+/// Named destinations shared by screen navigation and the router.
+abstract final class AppRoutes {
+  static const welcome = 'welcome';
+  static const login = 'login';
+  static const createAccount = 'create-account';
+  static const verifyNumber = 'verify-number';
+  static const setUpProfile = 'set-up-profile';
+  static const home = 'home';
+  static const doctors = 'doctors';
+  static const symptomEntry = 'symptom-entry';
+  static const symptomAssessment = 'symptom-assessment';
+  static const recommendedDoctors = 'recommended-doctors';
+  static const doctorDetail = 'doctor-detail';
+  static const chat = 'chat';
+  static const video = 'video';
+  static const profile = 'profile';
+  static const preferences = 'preferences';
+  static const notifications = 'notifications';
+  static const doctorDashboard = 'doctor-dashboard';
+  static const doctorQueue = 'doctor-queue';
+  static const doctorSchedule = 'doctor-schedule';
+  static const doctorProfile = 'doctor-portal-profile';
+  static const reports = 'reports';
+  static const appointments = 'appointments';
+  static const bookAppointment = 'book-appointment';
+  static const appointmentDateTime = 'appointment-date-time';
+  static const appointmentPayment = 'appointment-payment';
+  static const appointmentConfirmation = 'appointment-confirmation';
+  static const paymentCheckout = 'payment-checkout';
+  static const paymentFailed = 'payment-failed';
+}
