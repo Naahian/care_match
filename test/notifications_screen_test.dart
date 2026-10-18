@@ -1,3 +1,4 @@
+import 'support/appointments_test_scope.dart';
 import 'package:care_match/core/theme/theme.dart';
 import 'package:care_match/features/appointments/presentation/screens/my_appointments_screen.dart';
 import 'package:care_match/features/records/presentation/screens/my_reports_screen.dart';
@@ -21,7 +22,9 @@ void main() {
       final router = createAppRouter(initialLocation: '/home');
       addTearDown(router.dispose);
       await tester.pumpWidget(
-        Sizer(builder: (_, _, _) => MyApp(router: router)),
+        appointmentsTestScope(
+          Sizer(builder: (_, _, _) => MyApp(router: router)),
+        ),
       );
       await tester.pumpAndSettle();
       await tester.tap(find.text('Notifications'));

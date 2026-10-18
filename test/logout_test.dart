@@ -1,3 +1,4 @@
+import 'support/auth_test_scope.dart';
 import 'package:care_match/core/constants/app_routes.dart';
 import 'package:care_match/features/auth/presentation/screens/login_screen.dart';
 import 'package:care_match/main.dart';
@@ -17,7 +18,7 @@ void main() {
       final router = createAppRouter(initialLocation: '/home');
       addTearDown(router.dispose);
       await tester.pumpWidget(
-        Sizer(builder: (_, _, _) => MyApp(router: router)),
+        authTestScope(Sizer(builder: (_, _, _) => MyApp(router: router))),
       );
       await tester.pumpAndSettle();
       router.pushNamed(destination);

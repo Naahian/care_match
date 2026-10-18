@@ -1,3 +1,4 @@
+import 'package:care_match/features/doctors/presentation/widgets/doctor_profile.dart';
 import 'package:care_match/core/theme/theme.dart';
 import 'package:care_match/features/doctors/presentation/screens/doctor_detail_screen.dart';
 import 'package:flutter/material.dart';
@@ -25,7 +26,7 @@ void main() {
               ).copyWith(textScaler: TextScaler.linear(1.5)),
               child: child!,
             ),
-            home: const DoctorDetailScreen(),
+            home: const DoctorDetailScreen(profile: sampleDoctorProfile),
           ),
         ),
       );
@@ -38,12 +39,9 @@ void main() {
         200,
         scrollable: find.byType(Scrollable).first,
       );
-      expect(find.text(r'$79'), findsOneWidget);
+      expect(find.text('৳100'), findsWidgets);
       expect(booking.hitTestable(), findsOneWidget);
       expect(tester.takeException(), isNull);
-      await tester.tap(find.byTooltip('Add to favorites'));
-      await tester.pump();
-      expect(find.byTooltip('Remove from favorites'), findsOneWidget);
     });
   }
 }

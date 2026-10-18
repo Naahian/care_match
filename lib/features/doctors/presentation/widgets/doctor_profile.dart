@@ -1,3 +1,5 @@
+import '../../../../core/constants/constants.dart';
+import '../../domain/entities/doctor.dart';
 import 'doctor_summary.dart';
 
 class DoctorProfile {
@@ -6,9 +8,12 @@ class DoctorProfile {
     required this.biography,
     required this.hospital,
     required this.careAreas,
-    required this.chatPrice,
-    required this.videoPrice,
-    this.inPersonPrice = 'Not provided',
+    this.chatPrice = AppConstants.defaultConsultationPrice,
+    this.videoPrice = AppConstants.defaultConsultationPrice,
+    this.inPersonPrice = AppConstants.defaultConsultationPrice,
+    this.id,
+    this.daysAvailable = const [],
+    this.timeAvailable = const [],
   });
   final DoctorSummary summary;
   final String biography;
@@ -17,6 +22,10 @@ class DoctorProfile {
   final String chatPrice;
   final String videoPrice;
   final String inPersonPrice;
+  final String? id;
+  final List<String> daysAvailable;
+  final List<DoctorTimeRange> timeAvailable;
+  String get routeId => id ?? doctorProfileId(summary.name);
 }
 
 const sampleDoctorProfile = DoctorProfile(
@@ -32,10 +41,6 @@ const sampleDoctorProfile = DoctorProfile(
       'Dr. Emily Carter is a board-certified internal medicine physician with a passion for preventive care and helping patients achieve better long-term health outcomes.',
   hospital: 'CareMatch Medical Center',
   careAreas: ['Primary Care', 'Preventive Care', 'Chronic Conditions'],
-  chatPrice: r'$49',
-  videoPrice: r'$79',
-  // Sample price for the booking UI; replace with the doctor's actual fee.
-  inPersonPrice: r'$99',
 );
 
 /// Stable sample identifiers also work when a detail URL is opened directly.
@@ -50,6 +55,4 @@ DoctorProfile profileForSummary(DoctorSummary summary) => DoctorProfile(
       'Consult ${summary.name} for ${summary.specialty.toLowerCase()} care.',
   hospital: 'Not provided',
   careAreas: [summary.specialty],
-  chatPrice: 'Not provided',
-  videoPrice: 'Not provided',
 );

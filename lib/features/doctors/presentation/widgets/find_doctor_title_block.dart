@@ -27,8 +27,7 @@ class FindDoctorTitleBlock extends StatelessWidget {
               ),
               const SizedBox(height: AppSpacing.sm),
               Text(
-                'Search by specialty or name.'
-                'Find the right doctor, near you.',
+                'Search by specialty, name, or clinic.',
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: scheme.onSurfaceVariant,
                 ),

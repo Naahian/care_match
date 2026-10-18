@@ -9,11 +9,7 @@ import '../widgets/doctor_consultation_option.dart';
 import 'package:care_match/features/appointments/presentation/models/appointment_draft.dart';
 
 class DoctorDetailScreen extends StatefulWidget {
-  const DoctorDetailScreen({
-    super.key,
-    this.profile = sampleDoctorProfile,
-    this.portrait,
-  });
+  const DoctorDetailScreen({super.key, required this.profile, this.portrait});
   final DoctorProfile profile;
   final Widget? portrait;
 
@@ -22,41 +18,12 @@ class DoctorDetailScreen extends StatefulWidget {
 }
 
 class _DoctorDetailScreenState extends State<DoctorDetailScreen> {
-  bool _isFavorite = false;
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     return Scaffold(
-      appBar: AppBar(
-        actions: [
-          IconButton(
-            tooltip: _isFavorite ? 'Remove from favorites' : 'Add to favorites',
-            color: scheme.primary,
-            onPressed: () {
-              setState(() => _isFavorite = !_isFavorite);
-              // TODO: persist the favorite doctor selection.
-            },
-            icon: Icon(
-              _isFavorite
-                  ? Icons.favorite_rounded
-                  : Icons.favorite_border_rounded,
-            ),
-          ),
-          PopupMenuButton<String>(
-            tooltip: 'More options',
-            iconColor: scheme.primary,
-            onSelected: (value) {
-              // TODO: handle sharing or reporting this doctor profile.
-            },
-            itemBuilder: (_) => const [
-              PopupMenuItem(value: 'share', child: Text('Share profile')),
-              PopupMenuItem(value: 'report', child: Text('Report profile')),
-            ],
-          ),
-        ],
-      ),
+      appBar: AppBar(),
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
@@ -113,11 +80,7 @@ class _DoctorDetailScreenState extends State<DoctorDetailScreen> {
                       onPressed: () {
                         context.pushNamed(
                           AppRoutes.bookAppointment,
-                          pathParameters: {
-                            'doctorId': doctorProfileId(
-                              widget.profile.summary.name,
-                            ),
-                          },
+                          pathParameters: {'doctorId': widget.profile.routeId},
                           extra: AppointmentDraft(doctor: widget.profile),
                         );
                       },

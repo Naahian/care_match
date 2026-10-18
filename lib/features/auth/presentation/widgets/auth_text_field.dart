@@ -13,6 +13,9 @@ class AuthTextField extends StatefulWidget {
     this.prefix,
     this.validator,
     this.controller,
+    this.enabled = true,
+    this.textInputAction,
+    this.onFieldSubmitted,
   });
   final String hint;
   final String? label;
@@ -23,6 +26,9 @@ class AuthTextField extends StatefulWidget {
   final Widget? prefix;
   final FormFieldValidator<String>? validator;
   final TextEditingController? controller;
+  final bool enabled;
+  final TextInputAction? textInputAction;
+  final ValueChanged<String>? onFieldSubmitted;
 
   @override
   State<AuthTextField> createState() => _AuthTextFieldState();
@@ -40,14 +46,16 @@ class _AuthTextFieldState extends State<AuthTextField> {
       borderSide: BorderSide(color: scheme.outlineVariant),
     );
     return TextFormField(
+      enabled: widget.enabled,
       controller: widget.controller,
       obscureText: widget.isPassword && !_visible,
       keyboardType: widget.keyboardType,
       autofillHints: widget.autofillHints,
       validator: widget.validator,
-      textInputAction: widget.isPassword
-          ? TextInputAction.done
-          : TextInputAction.next,
+      onFieldSubmitted: widget.onFieldSubmitted,
+      textInputAction:
+          widget.textInputAction ??
+          (widget.isPassword ? TextInputAction.done : TextInputAction.next),
       style: theme.textTheme.bodyMedium,
       decoration: InputDecoration(
         labelText: widget.label,

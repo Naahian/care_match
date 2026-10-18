@@ -4,13 +4,13 @@ import 'package:flutter/material.dart';
 import '../../features/home/presentation/widgets/doctor_summary.dart';
 import 'doctor_avatar.dart';
 
-/// Tappable card summarizing a doctor: photo, name, specialty, availability.
+/// Doctor summary, optionally tappable when an action is supplied.
 class DoctorCard extends StatelessWidget {
   const DoctorCard({
     super.key,
     required this.doctor,
     required this.highlightAlt,
-    required this.onTap,
+    this.onTap,
     this.price,
   });
 
@@ -18,7 +18,7 @@ class DoctorCard extends StatelessWidget {
 
   /// Alternates the availability chip color between cards.
   final bool highlightAlt;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   final String? price;
 
   @override
@@ -99,7 +99,8 @@ class DoctorCard extends StatelessWidget {
                   ],
                 ),
               ),
-              Icon(Icons.chevron_right_rounded, color: scheme.outline),
+              if (onTap != null)
+                Icon(Icons.chevron_right_rounded, color: scheme.outline),
             ],
           ),
         ),

@@ -1,9 +1,6 @@
 import 'package:care_match/core/constants/constants.dart';
-import 'package:care_match/core/constants/app_routes.dart';
-import 'package:care_match/features/doctors/presentation/widgets/doctor_profile.dart';
-import 'package:care_match/shared/widgets/doctor_card.dart';
+import 'package:care_match/features/appointments/presentation/widgets/appointment_doctor_card.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import '../models/appointment_draft.dart';
 
 class AppointmentSummaryCard extends StatelessWidget {
@@ -40,16 +37,7 @@ class AppointmentSummaryCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            DoctorCard(
-              doctor: draft.doctor.summary,
-              highlightAlt: !draft.doctor.summary.availableToday,
-              onTap: () => context.pushNamed(
-                AppRoutes.doctorDetail,
-                pathParameters: {
-                  'doctorId': doctorProfileId(draft.doctor.summary.name),
-                },
-              ),
-            ),
+            AppointmentDoctorCard(draft: draft, showProfileDetails: true),
             const SizedBox(height: AppSpacing.sm),
             const Divider(),
             _row(

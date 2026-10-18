@@ -2,6 +2,7 @@
 abstract final class AppRoutes {
   static const welcome = 'welcome';
   static const login = 'login';
+  static const forgotPassword = 'forgot-password';
   static const createAccount = 'create-account';
   static const verifyNumber = 'verify-number';
   static const setUpProfile = 'set-up-profile';
@@ -12,6 +13,7 @@ abstract final class AppRoutes {
   static const recommendedDoctors = 'recommended-doctors';
   static const doctorDetail = 'doctor-detail';
   static const chat = 'chat';
+  static const conversation = 'conversation';
   static const video = 'video';
   static const profile = 'profile';
   static const preferences = 'preferences';
@@ -26,6 +28,4 @@ abstract final class AppRoutes {
   static const appointmentDateTime = 'appointment-date-time';
   static const appointmentPayment = 'appointment-payment';
   static const appointmentConfirmation = 'appointment-confirmation';
-  static const paymentCheckout = 'payment-checkout';
-  static const paymentFailed = 'payment-failed';
 }

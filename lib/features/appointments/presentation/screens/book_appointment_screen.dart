@@ -1,4 +1,3 @@
-import 'package:care_match/features/doctors/presentation/widgets/doctor_profile.dart';
 import 'package:care_match/core/constants/constants.dart';
 import 'package:care_match/core/constants/app_routes.dart';
 import 'package:flutter/material.dart';
@@ -41,7 +40,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
                   children: [
                     AppointmentDoctorCard(
                       draft: _draft,
-                      showProfileDetails: true,
+                      showProfileDetails: false,
                     ),
                     const SizedBox(height: AppSpacing.md),
                     Text(
@@ -121,9 +120,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
                   FocusScope.of(context).unfocus();
                   context.pushNamed(
                     AppRoutes.appointmentDateTime,
-                    pathParameters: {
-                      'doctorId': doctorProfileId(_draft.doctor.summary.name),
-                    },
+                    pathParameters: {'doctorId': _draft.doctor.routeId},
                     extra: _draft,
                   );
                 },

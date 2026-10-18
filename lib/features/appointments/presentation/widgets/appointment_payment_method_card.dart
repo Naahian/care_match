@@ -29,16 +29,13 @@ class AppointmentPaymentMethodCard extends StatelessWidget {
         clipBehavior: Clip.antiAlias,
         child: ListTile(
           onTap: onTap,
-          // TODO: replace with the corresponding payment provider logo asset.
           leading: Icon(
-            Icons.account_balance_wallet_outlined,
+            method == AppointmentPaymentMethod.sslcommerz
+                ? Icons.payment_rounded
+                : Icons.account_balance_wallet_outlined,
             color: scheme.primary,
           ),
-          title: Text(
-            method == AppointmentPaymentMethod.googlePay
-                ? 'Google Pay'
-                : 'Apple Pay',
-          ),
+          title: Text(method.label),
           trailing: Icon(
             selected
                 ? Icons.radio_button_checked_rounded

@@ -12,8 +12,6 @@ const sampleRecommendedProfiles = [
     biography: 'Family medicine and primary care consultations.',
     hospital: 'CareMatch Medical Center',
     careAreas: ['Family Medicine'],
-    chatPrice: r'$45',
-    videoPrice: r'$75',
   ),
   DoctorProfile(
     summary: DoctorSummary(
@@ -25,7 +23,5 @@ const sampleRecommendedProfiles = [
     biography: 'General health and primary care consultations.',
     hospital: 'CareMatch Medical Center',
     careAreas: ['Primary Care'],
-    chatPrice: r'$52',
-    videoPrice: r'$82',
   ),
 ];

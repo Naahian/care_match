@@ -4,21 +4,13 @@ import 'package:flutter/material.dart';
 class AppointmentTimeSlots extends StatelessWidget {
   const AppointmentTimeSlots({
     super.key,
-    required this.date,
+    required this.slots,
     required this.selected,
     required this.onSelected,
   });
-  final DateTime date;
+  final List<TimeOfDay> slots;
   final TimeOfDay? selected;
   final ValueChanged<TimeOfDay> onSelected;
-  static const slots = [
-    TimeOfDay(hour: 9, minute: 0),
-    TimeOfDay(hour: 10, minute: 0),
-    TimeOfDay(hour: 11, minute: 30),
-    TimeOfDay(hour: 13, minute: 0),
-    TimeOfDay(hour: 14, minute: 30),
-    TimeOfDay(hour: 16, minute: 0),
-  ];
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(
@@ -32,20 +24,13 @@ class AppointmentTimeSlots extends StatelessWidget {
         spacing: AppSpacing.sm,
         runSpacing: AppSpacing.sm,
         children: slots.map((slot) {
-          final future = DateTime(
-            date.year,
-            date.month,
-            date.day,
-            slot.hour,
-            slot.minute,
-          ).isAfter(DateTime.now());
           final active = selected == slot;
           return SizedBox(
             width:
                 (constraints.maxWidth - AppSpacing.sm * (columns - 1)) /
                 columns,
             child: OutlinedButton(
-              onPressed: future ? () => onSelected(slot) : null,
+              onPressed: () => onSelected(slot),
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(
                   vertical: AppSpacing.md,

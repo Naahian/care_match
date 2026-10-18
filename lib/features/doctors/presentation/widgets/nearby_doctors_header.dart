@@ -5,9 +5,11 @@ import 'package:sizer/sizer.dart';
 /// Sample location label. Replace with the user's resolved location.
 const String sampleLocation = 'Dhaka, Bangladesh';
 
-/// Section header for nearby doctors: title, location pill and "See all".
+/// Section header for nearby doctors with a current-location action.
 class NearbyDoctorsHeader extends StatelessWidget {
-  const NearbyDoctorsHeader({super.key});
+  const NearbyDoctorsHeader({super.key, this.onUseCurrentLocation});
+
+  final VoidCallback? onUseCurrentLocation;
 
   @override
   Widget build(BuildContext context) {
@@ -49,16 +51,15 @@ class NearbyDoctorsHeader extends StatelessWidget {
             ],
           ),
         ),
-        TextButton(
-          onPressed: () {
-            // TODO: navigate to the full nearby doctors list
-          },
-          child: Text(
-            'See all',
-            style: theme.textTheme.labelLarge?.copyWith(
-              color: scheme.onSurfaceVariant,
-            ),
-          ),
+        IconButton(
+          tooltip: 'Use current location',
+          color: scheme.primary,
+          onPressed:
+              onUseCurrentLocation ??
+              () {
+                // TODO: resolve the current GPS location and refresh nearby doctors.
+              },
+          icon: const Icon(Icons.my_location_rounded),
         ),
       ],
     );

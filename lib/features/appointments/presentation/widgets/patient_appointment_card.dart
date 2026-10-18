@@ -1,25 +1,31 @@
-import 'package:care_match/core/constants/constants.dart';
-import 'package:care_match/shared/widgets/doctor_card.dart';
-import 'package:care_match/shared/widgets/doctor_summary.dart';
 import 'package:flutter/material.dart';
-import '../models/appointment_entry.dart';
-import '../models/appointment_draft.dart';
+
+import '../../../../core/constants/constants.dart';
+import '../../../../shared/widgets/doctor_card.dart';
+import '../../../../shared/widgets/doctor_summary.dart';
+import '../../domain/entities/appointment.dart';
+import '../../domain/entities/patient_appointment.dart';
 
 class PatientAppointmentCard extends StatelessWidget {
   const PatientAppointmentCard({
     super.key,
     required this.appointment,
-    required this.onView,
-    required this.onPrimary,
+    this.onCancel,
+    this.isUpdating = false,
+    this.errorMessage,
   });
-  final AppointmentEntry appointment;
-  final VoidCallback onView;
-  final VoidCallback onPrimary;
+  final PatientAppointment appointment;
+  final VoidCallback? onCancel;
+  final bool isUpdating;
+  final String? errorMessage;
+
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final record = appointment.appointment;
+    final doctor = appointment.doctor;
+    final date = record.scheduledFor.toLocal();
     final localizations = MaterialLocalizations.of(context);
-    final upcoming = appointment.status == AppointmentStatus.upcoming;
+    final theme = Theme.of(context);
     return Card(
       child: Padding(
         padding: AppSpacing.card,
@@ -28,18 +34,19 @@ class PatientAppointmentCard extends StatelessWidget {
           children: [
             DoctorCard(
               doctor: DoctorSummary(
-                name: appointment.doctor.name,
-                specialty: appointment.doctor.specialty,
-                availability: upcoming
-                    ? (DateUtils.isSameDay(appointment.dateTime, DateTime.now())
-                          ? 'Today'
-                          : 'Confirmed')
-                    : (appointment.status == AppointmentStatus.completed
-                          ? 'Completed'
-                          : 'Cancelled'),
+                name: doctor?.name ?? 'Doctor details unavailable',
+                specialty: doctor == null || doctor.specialties.isEmpty
+                    ? 'Specialty not provided'
+                    : doctor.specialties.join(', '),
+                availability: switch (record.status) {
+                  AppointmentStatus.requested => 'Requested',
+                  AppointmentStatus.confirmed => 'Confirmed',
+                  AppointmentStatus.completed => 'Completed',
+                  AppointmentStatus.cancelled => 'Cancelled',
+                },
+                availableToday: false,
               ),
-              highlightAlt: appointment.status != AppointmentStatus.upcoming,
-              onTap: onView,
+              highlightAlt: !record.canCancel,
             ),
             const SizedBox(height: AppSpacing.sm),
             Wrap(
@@ -51,49 +58,48 @@ class PatientAppointmentCard extends StatelessWidget {
                   Icons.calendar_month_outlined,
                   color: theme.colorScheme.primary,
                 ),
-                Text(localizations.formatMediumDate(appointment.dateTime)),
+                Text(localizations.formatMediumDate(date)),
                 Icon(Icons.schedule_rounded, color: theme.colorScheme.primary),
                 Text(
-                  localizations.formatTimeOfDay(
-                    TimeOfDay.fromDateTime(appointment.dateTime),
-                  ),
+                  localizations.formatTimeOfDay(TimeOfDay.fromDateTime(date)),
                 ),
               ],
             ),
-            const SizedBox(height: AppSpacing.sm),
-            Row(
-              children: [
-                Icon(appointment.type.icon, color: theme.colorScheme.primary),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: Text(
-                    appointment.type.label,
-                    style: theme.textTheme.bodyMedium,
-                  ),
-                ),
-              ],
-            ),
-            if (appointment.type == ConsultationType.inPerson) ...[
-              const SizedBox(height: AppSpacing.xs),
-              Text(appointment.location, style: theme.textTheme.bodySmall),
+            if (record.reason.isNotEmpty) ...[
+              const SizedBox(height: AppSpacing.sm),
+              Text('Reason: ${record.reason}'),
             ],
-            const SizedBox(height: AppSpacing.sm),
-            if (upcoming && appointment.type != ConsultationType.inPerson) ...[
-              FilledButton.icon(
-                onPressed: onPrimary,
-                label: Text(
-                  appointment.type == ConsultationType.video
-                      ? 'Join video'
-                      : 'Join chat',
+            if (record.notes != null) ...[
+              const SizedBox(height: AppSpacing.xs),
+              Text('Notes: ${record.notes}', style: theme.textTheme.bodySmall),
+            ],
+            if (record.videoRoomId != null) ...[
+              const SizedBox(height: AppSpacing.sm),
+              const Text('Video room assigned'),
+            ],
+            if (errorMessage != null) ...[
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                errorMessage!,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.error,
                 ),
-                icon: const Icon(Icons.arrow_forward_rounded),
               ),
-              const SizedBox(height: AppSpacing.xs),
             ],
-            OutlinedButton(
-              onPressed: onView,
-              child: const Text('View details'),
-            ),
+            if (record.canCancel) ...[
+              const SizedBox(height: AppSpacing.sm),
+              OutlinedButton.icon(
+                onPressed: isUpdating ? null : onCancel,
+                icon: isUpdating
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.event_busy_outlined),
+                label: Text(isUpdating ? 'Cancelling…' : 'Cancel appointment'),
+              ),
+            ],
           ],
         ),
       ),

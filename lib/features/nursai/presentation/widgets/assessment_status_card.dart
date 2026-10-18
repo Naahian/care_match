@@ -7,16 +7,8 @@ class AssessmentStatusCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final labels = [
-      'Reviewing your symptom details',
-      'Preparing assessment preview',
-      'Finding sample doctor matches',
-    ];
-    final icons = [
-      Icons.description_outlined,
-      Icons.schedule_rounded,
-      Icons.person_search_outlined,
-    ];
+    final labels = ['Assessing your symptom details'];
+    final icons = [Icons.description_outlined];
     return Card(
       child: Padding(
         padding: AppSpacing.card,

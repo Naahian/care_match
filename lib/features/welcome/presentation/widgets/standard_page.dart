@@ -11,11 +11,13 @@ class StandardPage extends StatelessWidget {
     required this.title,
     required this.description,
     required this.imageAsset,
+    this.illustration,
   });
 
   final String title;
   final String description;
   final String imageAsset;
+  final Widget? illustration;
 
   @override
   Widget build(BuildContext context) {
@@ -27,14 +29,16 @@ class StandardPage extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            const SizedBox(height: AppSpacing.lg),
+            const SizedBox(height: AppSpacing.md),
             Text(
               title,
               style: theme.textTheme.headlineLarge?.copyWith(
                 color: scheme.onPrimaryContainer,
               ),
             ),
+
             const SizedBox(height: AppSpacing.md),
             Text(
               description,
@@ -42,8 +46,9 @@ class StandardPage extends StatelessWidget {
                 color: scheme.onSurfaceVariant,
               ),
             ),
-            const SizedBox(height: AppSpacing.lg),
-            Expanded(child: IllustrationSlot(imageAsset: imageAsset)),
+            Expanded(
+              child: illustration ?? IllustrationSlot(imageAsset: imageAsset),
+            ),
           ],
         ),
       ),

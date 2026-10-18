@@ -1,4 +1,7 @@
 import 'dart:async';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../controllers/nursai_controller.dart';
+import '../widgets/triage_result_card.dart';
 import 'package:care_match/core/constants/constants.dart';
 import 'package:care_match/core/constants/app_routes.dart';
 import 'package:flutter/material.dart';
@@ -7,45 +10,32 @@ import 'package:sizer/sizer.dart';
 import '../models/symptom_intake.dart';
 import '../widgets/assessment_status_card.dart';
 
-class SymptomAssessmentScreen extends StatefulWidget {
+class SymptomAssessmentScreen extends ConsumerStatefulWidget {
   const SymptomAssessmentScreen({super.key, required this.intake});
   final SymptomIntake intake;
   @override
-  State<SymptomAssessmentScreen> createState() =>
+  ConsumerState<SymptomAssessmentScreen> createState() =>
       _SymptomAssessmentScreenState();
 }
 
-class _SymptomAssessmentScreenState extends State<SymptomAssessmentScreen> {
-  Timer? _timer;
-  int _activeStage = 0;
+class _SymptomAssessmentScreenState
+    extends ConsumerState<SymptomAssessmentScreen> {
   @override
   void initState() {
     super.initState();
-    // TODO: replace this demo timer with actual AI assessment state and results.
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (_activeStage == 2) {
-        timer.cancel();
-        if (mounted) {
-          context.pushReplacementNamed(
-            AppRoutes.recommendedDoctors,
-            extra: widget.intake,
-          );
-        }
-      } else {
-        setState(() => _activeStage++);
+    scheduleMicrotask(() {
+      if (mounted) {
+        unawaited(
+          ref.read(nursaiControllerProvider.notifier).assess(widget.intake),
+        );
       }
     });
   }
 
   @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final state = ref.watch(nursaiControllerProvider);
     return Scaffold(
       appBar: AppBar(),
       body: SafeArea(
@@ -62,7 +52,11 @@ class _SymptomAssessmentScreenState extends State<SymptomAssessmentScreen> {
                   excludeFromSemantics: true,
                 ),
                 Text(
-                  'Assessing your symptoms',
+                  state.assessment != null
+                      ? 'Your symptom assessment'
+                      : state.errorMessage != null
+                      ? 'Assessment unavailable'
+                      : 'Assessing your symptoms',
                   textAlign: TextAlign.center,
                   style: theme.textTheme.headlineMedium?.copyWith(
                     color: theme.colorScheme.onPrimaryContainer,
@@ -70,14 +64,38 @@ class _SymptomAssessmentScreenState extends State<SymptomAssessmentScreen> {
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 Text(
-                  'Preparing a preview of your symptom assessment and recommended doctors.',
+                  'NurseAI reviews your details to suggest the next steps for care.',
                   textAlign: TextAlign.center,
                   style: theme.textTheme.bodyLarge?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
                 ),
                 const SizedBox(height: AppSpacing.lg),
-                AssessmentStatusCard(activeStage: _activeStage),
+                if (state.isLoading) const AssessmentStatusCard(activeStage: 0),
+                if (state.errorMessage != null) ...[
+                  Text(state.errorMessage!, textAlign: TextAlign.center),
+                  TextButton(
+                    onPressed: () => ref
+                        .read(nursaiControllerProvider.notifier)
+                        .assess(widget.intake),
+                    child: const Text('Retry'),
+                  ),
+                ],
+                if (state.assessment case final assessment?) ...[
+                  TriageResultCard(assessment: assessment),
+                  const SizedBox(height: AppSpacing.md),
+                  FilledButton(
+                    onPressed: () => context.pushNamed(
+                      AppRoutes.recommendedDoctors,
+                      extra: assessment,
+                    ),
+                    child: Text(
+                      assessment.recommendedSpecialties.isEmpty
+                          ? 'Browse doctors'
+                          : 'Browse recommended specialties',
+                    ),
+                  ),
+                ],
                 const SizedBox(height: AppSpacing.md),
                 Card(
                   color: theme.colorScheme.primaryContainer,
@@ -92,7 +110,7 @@ class _SymptomAssessmentScreenState extends State<SymptomAssessmentScreen> {
                         const SizedBox(width: AppSpacing.md),
                         const Expanded(
                           child: Text(
-                            'AI guidance is not a diagnosis. This preview uses sample matches until the assessment service is connected.',
+                            'AI guidance is not a diagnosis. Consult a qualified healthcare professional for medical advice.',
                           ),
                         ),
                       ],

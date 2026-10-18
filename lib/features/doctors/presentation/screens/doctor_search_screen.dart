@@ -1,4 +1,7 @@
-import 'package:care_match/features/doctors/presentation/widgets/doctor_profile.dart';
+import 'dart:async';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../controllers/doctors_controller.dart';
+import '../widgets/doctors_results.dart';
 import 'package:care_match/core/constants/app_routes.dart';
 import 'package:go_router/go_router.dart';
 import 'package:care_match/core/constants/constants.dart';
@@ -6,33 +9,47 @@ import 'package:care_match/shared/widgets/brand_header.dart';
 import 'package:care_match/shared/widgets/bottom_navbar.dart';
 import 'package:flutter/material.dart';
 
-import 'package:care_match/shared/widgets/doctor_card.dart';
 import '../widgets/doctor_search_field.dart';
-import '../widgets/doctor_summary.dart';
 import '../widgets/find_doctor_title_block.dart';
-import '../widgets/nearby_doctors_header.dart';
 import '../widgets/specialty_strip.dart';
 
-/// "Find a Doctor" search screen: symptom/specialty search, specialty
-/// shortcuts and a list of nearby doctors.
-class FindDoctorScreen extends StatefulWidget {
+/// Searches and filters the API doctor directory.
+class FindDoctorScreen extends ConsumerStatefulWidget {
   const FindDoctorScreen({super.key, this.initialQuery = ''});
   final String initialQuery;
 
   @override
-  State<FindDoctorScreen> createState() => _FindDoctorScreenState();
+  ConsumerState<FindDoctorScreen> createState() => _FindDoctorScreenState();
 }
 
-class _FindDoctorScreenState extends State<FindDoctorScreen> {
+class _FindDoctorScreenState extends ConsumerState<FindDoctorScreen> {
   late final TextEditingController _searchController = TextEditingController(
     text: widget.initialQuery,
   );
+
+  @override
+  void initState() {
+    super.initState();
+    scheduleMicrotask(() {
+      if (!mounted) return;
+      final controller = ref.read(doctorsControllerProvider.notifier);
+      controller.search(widget.initialQuery);
+      unawaited(controller.load());
+    });
+  }
 
   @override
   void didUpdateWidget(covariant FindDoctorScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.initialQuery != widget.initialQuery) {
       _searchController.text = widget.initialQuery;
+      scheduleMicrotask(() {
+        if (mounted) {
+          ref
+              .read(doctorsControllerProvider.notifier)
+              .search(widget.initialQuery);
+        }
+      });
     }
   }
 
@@ -44,80 +61,108 @@ class _FindDoctorScreenState extends State<FindDoctorScreen> {
 
   void _submitSearch() {
     final query = _searchController.text.trim();
-    if (query.isEmpty) return;
-    // TODO: fetch doctor results for this query.
+    ref.read(doctorsControllerProvider.notifier).search(query);
     context.goNamed(AppRoutes.doctors, queryParameters: {'query': query});
   }
 
   @override
   Widget build(BuildContext context) {
+    final state = ref.watch(doctorsControllerProvider);
     return Scaffold(
       bottomNavigationBar: BottomNavBar(current: 1),
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 600),
-            child: CustomScrollView(
-              slivers: [
-                SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.md,
-                    AppSpacing.md,
-                    AppSpacing.md,
-                    0,
-                  ),
-                  sliver: SliverList(
-                    delegate: SliverChildListDelegate([
-                      const BrandHeader(),
-                      const SizedBox(height: AppSpacing.lg),
-                      const FindDoctorTitleBlock(),
-                      const SizedBox(height: AppSpacing.lg),
-                      DoctorSearchField(
-                        controller: _searchController,
-                        onSubmit: _submitSearch,
-                      ),
-                      const SizedBox(height: AppSpacing.lg),
-                    ]),
-                  ),
-                ),
-                const SliverToBoxAdapter(child: SpecialtyStrip()),
-                const SliverPadding(
-                  padding: EdgeInsets.fromLTRB(
-                    AppSpacing.md,
-                    AppSpacing.lg,
-                    AppSpacing.md,
-                    AppSpacing.sm,
-                  ),
-                  sliver: SliverToBoxAdapter(child: NearbyDoctorsHeader()),
-                ),
-                SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.md,
-                    0,
-                    AppSpacing.md,
-                    AppSpacing.lg,
-                  ),
-                  sliver: SliverList.separated(
-                    itemCount: sampleDoctors.length,
-                    separatorBuilder: (_, _) =>
-                        const SizedBox(height: AppSpacing.md),
-                    itemBuilder: (context, index) => DoctorCard(
-                      doctor: sampleDoctors[index],
-                      highlightAlt: !sampleDoctors[index].availableToday,
-                      onTap: () {
-                        context.pushNamed(
-                          AppRoutes.doctorDetail,
-                          pathParameters: {
-                            'doctorId': doctorProfileId(
-                              sampleDoctors[index].name,
-                            ),
-                          },
-                        );
-                      },
+            child: RefreshIndicator(
+              onRefresh: () => ref
+                  .read(doctorsControllerProvider.notifier)
+                  .load(refresh: true),
+              child: CustomScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                slivers: [
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.md,
+                      AppSpacing.md,
+                      AppSpacing.md,
+                      0,
+                    ),
+                    sliver: SliverList(
+                      delegate: SliverChildListDelegate([
+                        const BrandHeader(),
+                        const SizedBox(height: AppSpacing.lg),
+                        const FindDoctorTitleBlock(),
+                        const SizedBox(height: AppSpacing.lg),
+                        DoctorSearchField(
+                          controller: _searchController,
+                          onSubmit: _submitSearch,
+                        ),
+                        const SizedBox(height: AppSpacing.lg),
+                      ]),
                     ),
                   ),
-                ),
-              ],
+                  SliverToBoxAdapter(
+                    child: SpecialtyStrip(
+                      specialties:
+                          (state.doctors
+                              .expand((d) => d.specialties)
+                              .toSet()
+                              .toList()
+                            ..sort()),
+                      selected: state.specialty,
+                      onSelected: ref
+                          .read(doctorsControllerProvider.notifier)
+                          .selectSpecialty,
+                    ),
+                  ),
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.md,
+                      AppSpacing.lg,
+                      AppSpacing.md,
+                      AppSpacing.sm,
+                    ),
+                    sliver: SliverToBoxAdapter(
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'Doctors',
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                          ),
+                          IconButton(
+                            tooltip: 'Refresh doctors',
+                            onPressed: state.isLoading
+                                ? null
+                                : () => ref
+                                      .read(doctorsControllerProvider.notifier)
+                                      .load(refresh: true),
+                            icon: const Icon(Icons.refresh),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.md,
+                      0,
+                      AppSpacing.md,
+                      AppSpacing.lg,
+                    ),
+                    sliver: SliverToBoxAdapter(
+                      child: DoctorsResults(
+                        state: state,
+                        onRetry: () => ref
+                            .read(doctorsControllerProvider.notifier)
+                            .load(refresh: true),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

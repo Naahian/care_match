@@ -1,6 +1,5 @@
 import 'package:care_match/core/constants/constants.dart';
 import 'package:care_match/core/constants/app_routes.dart';
-import 'package:care_match/features/payments/presentation/models/payment_checkout_session.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../models/appointment_draft.dart';
@@ -47,8 +46,9 @@ class _AppointmentPaymentScreenState extends State<AppointmentPaymentScreen> {
                       AppointmentPaymentMethodCard(
                         method: method,
                         selected: widget.draft.paymentMethod == method,
-                        onTap: () =>
-                            setState(() => widget.draft.paymentMethod = method),
+                        onTap: () {
+                          setState(() => widget.draft.paymentMethod = method);
+                        },
                       ),
                       const SizedBox(height: AppSpacing.sm),
                     ],
@@ -63,39 +63,13 @@ class _AppointmentPaymentScreenState extends State<AppointmentPaymentScreen> {
                     widget.draft.total != null &&
                         widget.draft.scheduledAt?.isAfter(DateTime.now()) ==
                             true
-                    ? () {
-                        final provider =
-                            widget.draft.paymentMethod ==
-                                AppointmentPaymentMethod.googlePay
-                            ? 'Google Pay'
-                            : 'Apple Pay';
-                        final amount = appointmentMoney(widget.draft.total!);
-                        final successUrl = Uri.parse(
-                          'https://www.bkash.com/en',
-                        );
-                        final receipt = PaymentReceipt(
-                          reference:
-                              'dummy-${DateTime.now().microsecondsSinceEpoch}',
-                          provider: provider,
-                          amount: amount,
-                          paidAt: DateTime.now(),
-                        );
-                        context.pushNamed(
-                          AppRoutes.paymentCheckout,
-                          extra: PaymentCheckoutSession(
-                            appointmentDraft: widget.draft,
-                            provider: provider,
-                            amount: amount,
-                            checkoutUrl: successUrl,
-                            successReturnUrl: successUrl,
-                            failureReturnUrl: Uri.parse(
-                              'https://www.bkash.com/',
-                            ),
-                            verifyPayment: () async =>
-                                PaymentVerification.succeeded(receipt),
-                          ),
-                        );
-                      }
+                    ? () => context.pushNamed(
+                        AppRoutes.appointmentConfirmation,
+                        pathParameters: {
+                          'doctorId': widget.draft.doctor.routeId,
+                        },
+                        extra: widget.draft,
+                      )
                     : null,
               ),
             ],

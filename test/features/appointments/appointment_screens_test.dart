@@ -1,21 +1,40 @@
+import 'package:care_match/features/doctors/domain/entities/doctor.dart';
+import '../../support/doctors_test_scope.dart';
 import 'package:care_match/core/theme/theme.dart';
 import 'package:care_match/features/appointments/presentation/models/appointment_draft.dart';
 import 'package:care_match/features/appointments/presentation/screens/book_appointment_screen.dart';
 import 'package:care_match/features/appointments/presentation/screens/appointment_date_time_screen.dart';
 import 'package:care_match/features/appointments/presentation/screens/appointment_payment_screen.dart';
 import 'package:care_match/features/appointments/presentation/screens/appointment_confirmation_screen.dart';
-import 'package:care_match/features/appointments/presentation/screens/my_appointments_screen.dart';
-import 'package:care_match/features/appointments/presentation/widgets/patient_appointment_card.dart';
 import 'package:care_match/features/appointments/presentation/widgets/consultation_type_card.dart';
 import 'package:care_match/features/doctors/presentation/widgets/doctor_profile.dart';
+import 'package:care_match/core/constants/app_routes.dart';
 import 'package:care_match/main.dart';
 import 'package:care_match/router.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:go_router/go_router.dart';
 import 'package:sizer/sizer.dart';
 
-AppointmentDraft draft() => AppointmentDraft(doctor: sampleDoctorProfile)
+final bookingProfile = DoctorProfile(
+  summary: sampleDoctorProfile.summary,
+  biography: sampleDoctorProfile.biography,
+  hospital: sampleDoctorProfile.hospital,
+  careAreas: sampleDoctorProfile.careAreas,
+  daysAvailable: const [
+    'Monday',
+    'Tuesday',
+    'Wednesday',
+    'Thursday',
+    'Friday',
+    'Saturday',
+    'Sunday',
+  ],
+  timeAvailable: const [DoctorTimeRange(start: '09:00:00', end: '17:00:00')],
+);
+
+AppointmentDraft draft() => AppointmentDraft(doctor: bookingProfile)
   ..date = DateUtils.dateOnly(DateTime.now()).add(const Duration(days: 1))
   ..time = const TimeOfDay(hour: 10, minute: 0);
 
@@ -64,7 +83,11 @@ void main() {
   ) async {
     final router = createAppRouter(initialLocation: '/doctors/dr-emily-carter');
     addTearDown(router.dispose);
-    await tester.pumpWidget(Sizer(builder: (_, _, _) => MyApp(router: router)));
+    await tester.pumpWidget(
+      doctorsTestScope(Sizer(builder: (_, _, _) => MyApp(router: router))),
+    );
+    await tester.pumpAndSettle();
+    router.go('/doctors/dr-emily-carter', extra: bookingProfile);
     await tester.pumpAndSettle();
     await tester.tap(find.text('Book an appointment'));
     await tester.pumpAndSettle();
@@ -90,6 +113,12 @@ void main() {
           .onPressed,
       isNull,
     );
+    tester
+        .widget<CalendarDatePicker>(find.byType(CalendarDatePicker))
+        .onDateChanged(
+          DateUtils.dateOnly(DateTime.now()).add(const Duration(days: 1)),
+        );
+    await tester.pumpAndSettle();
     final slotLabel = MaterialLocalizations.of(
       tester.element(find.byType(AppointmentDateTimeScreen)),
     ).formatTimeOfDay(const TimeOfDay(hour: 10, minute: 0));
@@ -106,36 +135,65 @@ void main() {
     final payment = tester.widget<AppointmentPaymentScreen>(
       find.byType(AppointmentPaymentScreen),
     );
-    expect(payment.draft.total, 103);
+    expect(payment.draft.total, 104);
     await tester.scrollUntilVisible(
-      find.text('Apple Pay'),
+      find.text('bKash'),
       200,
       scrollable: find.byType(Scrollable).last,
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Apple Pay'));
+    expect(find.text('Google Pay'), findsNothing);
+    expect(find.text('Apple Pay'), findsNothing);
+    await tester.tap(find.text('bKash'));
     await tester.pump();
-    expect(payment.draft.paymentMethod, AppointmentPaymentMethod.applePay);
-    await tester.tap(find.text('Pay & confirm'));
-    await tester.pumpAndSettle();
-    final confirmation = tester.widget<AppointmentConfirmationScreen>(
-      find.byType(AppointmentConfirmationScreen),
-    );
-    expect(confirmation.draft.type, ConsultationType.inPerson);
-    expect(confirmation.draft.time, const TimeOfDay(hour: 10, minute: 0));
-    expect(confirmation.draft.doctor.summary.name, 'Dr. Emily Carter');
-    expect(router.canPop(), isFalse);
-    await tester.tap(find.text('View appointment'));
-    await tester.pumpAndSettle();
-    expect(find.byType(MyAppointmentsScreen), findsOneWidget);
-    final bookedAppointment = tester
-        .widget<PatientAppointmentCard>(
-          find.byType(PatientAppointmentCard).first,
-        )
-        .appointment;
-    expect(bookedAppointment.type, ConsultationType.inPerson);
-    expect(bookedAppointment.dateTime, confirmation.draft.scheduledAt);
+    expect(payment.draft.paymentMethod, AppointmentPaymentMethod.bkash);
+    expect(find.byType(AppointmentConfirmationScreen), findsNothing);
+    expect(find.byType(AppointmentPaymentScreen), findsOneWidget);
+    expect(payment.draft.type, ConsultationType.inPerson);
+    expect(payment.draft.time, const TimeOfDay(hour: 10, minute: 0));
   });
+
+  testWidgets(
+    'Pay & confirm opens appointment confirmation with the same draft',
+    (tester) async {
+      final booking = draft()..paymentMethod = AppointmentPaymentMethod.bkash;
+      final router = GoRouter(
+        routes: [
+          GoRoute(
+            path: '/',
+            builder: (_, _) => AppointmentPaymentScreen(draft: booking),
+          ),
+          GoRoute(
+            path: '/appointments/:doctorId/confirmation',
+            name: AppRoutes.appointmentConfirmation,
+            builder: (_, state) {
+              expect(state.pathParameters['doctorId'], booking.doctor.routeId);
+              expect(state.extra, same(booking));
+              return AppointmentConfirmationScreen(
+                draft: state.extra! as AppointmentDraft,
+              );
+            },
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
+      await tester.pumpWidget(
+        Sizer(
+          builder: (_, _, _) =>
+              MaterialApp.router(theme: AppTheme.light, routerConfig: router),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Pay & confirm'));
+      await tester.pumpAndSettle();
+      final confirmation = tester.widget<AppointmentConfirmationScreen>(
+        find.byType(AppointmentConfirmationScreen),
+      );
+      expect(confirmation.draft, same(booking));
+      expect(confirmation.draft.paymentMethod, AppointmentPaymentMethod.bkash);
+      expect(find.text('Your appointment is booked!'), findsOneWidget);
+    },
+  );
 
   testWidgets(
     'Later-step deep links restart booking without an available draft',
@@ -145,7 +203,7 @@ void main() {
       );
       addTearDown(router.dispose);
       await tester.pumpWidget(
-        Sizer(builder: (_, _, _) => MyApp(router: router)),
+        doctorsTestScope(Sizer(builder: (_, _, _) => MyApp(router: router))),
       );
       await tester.pumpAndSettle();
       expect(find.byType(BookAppointmentScreen), findsOneWidget);

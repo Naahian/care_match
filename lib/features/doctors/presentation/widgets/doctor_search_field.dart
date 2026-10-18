@@ -1,8 +1,7 @@
 import 'package:care_match/core/constants/constants.dart';
 import 'package:flutter/material.dart';
 
-/// Symptom/specialty search input with a leading search icon and a trailing
-/// filters button.
+/// Searches the doctor directory by name, specialty, or clinic.
 class DoctorSearchField extends StatelessWidget {
   const DoctorSearchField({
     super.key,
@@ -29,7 +28,7 @@ class DoctorSearchField extends StatelessWidget {
       onSubmitted: (_) => onSubmit(),
       style: theme.textTheme.bodyMedium,
       decoration: InputDecoration(
-        hintText: 'e.g. medecine, ent...',
+        hintText: 'Name, specialty, or clinic',
         hintStyle: theme.textTheme.bodyMedium?.copyWith(
           color: scheme.onSurfaceVariant,
         ),
@@ -42,6 +41,11 @@ class DoctorSearchField extends StatelessWidget {
           borderSide: BorderSide(color: scheme.primary, width: 1.5),
         ),
         prefixIcon: Icon(Icons.search_rounded, color: scheme.primary),
+        suffixIcon: IconButton(
+          tooltip: 'Search doctors',
+          onPressed: onSubmit,
+          icon: const Icon(Icons.arrow_forward_rounded),
+        ),
       ),
     );
   }

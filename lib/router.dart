@@ -1,8 +1,9 @@
+import 'features/doctors/presentation/screens/doctor_profile_loader.dart';
+import 'features/nursai/domain/entities/triage_assessment.dart';
 import 'features/nursai/presentation/screens/symptom_entry_screen.dart';
 import 'features/nursai/presentation/screens/symptom_assessment_screen.dart';
 import 'features/nursai/presentation/models/symptom_intake.dart';
 import 'features/doctors/presentation/screens/recommended_doctors_screen.dart';
-import 'features/doctors/presentation/widgets/recommended_doctor_profiles.dart';
 import 'features/appointments/presentation/models/appointment_draft.dart';
 import 'features/appointments/presentation/screens/book_appointment_screen.dart';
 import 'features/appointments/presentation/screens/appointment_date_time_screen.dart';
@@ -10,20 +11,23 @@ import 'features/appointments/presentation/screens/appointment_payment_screen.da
 import 'features/appointments/presentation/screens/appointment_confirmation_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/constants/app_routes.dart';
+import 'features/auth/providers.dart';
 import 'features/auth/presentation/screens/create_account_screen.dart';
 import 'features/auth/presentation/screens/login_screen.dart';
-import 'features/auth/presentation/screens/set_up_profile_screen.dart';
+import 'features/auth/presentation/screens/forgot_password_screen.dart';
+import 'features/profile/presentation/screens/set_up_profile_screen.dart';
 import 'features/auth/presentation/screens/verify_number_screen.dart';
 import 'features/consultation/presentation/screens/chat_list_screen.dart';
+import 'features/consultation/presentation/screens/conversation_screen.dart';
+import 'features/consultation/presentation/widgets/conversation.dart';
 import 'features/consultation/presentation/screens/video_onboarding_screen.dart';
 import 'features/doctors/presentation/screens/doctor_detail_screen.dart';
 import 'features/doctors/presentation/screens/doctor_search_screen.dart';
 import 'features/doctors/presentation/widgets/doctor_profile.dart';
-import 'features/doctors/presentation/widgets/doctor_summary.dart';
 import 'features/home/presentation/home_screen.dart';
-import 'features/home/presentation/widgets/doctor_summary.dart' as home;
 import 'features/welcome/presentation/onboarding.dart';
 import 'features/profile/presentation/screens/my_profile_screen.dart';
 import 'features/settings/presentation/screens/preferences_screen.dart';
@@ -34,32 +38,66 @@ import 'features/doctor_portal/presentation/screens/doctor_dashboard_screen.dart
 import 'features/doctor_portal/presentation/screens/patient_queue_screen.dart';
 import 'features/doctor_portal/presentation/screens/doctor_schedule_screen.dart';
 import 'features/doctor_portal/presentation/screens/doctor_portal_profile_screen.dart';
-import 'features/payments/presentation/models/payment_checkout_session.dart';
-import 'features/payments/presentation/screens/payment_webview_screen.dart';
-import 'features/payments/presentation/screens/payment_failed_screen.dart';
 
-final appRouter = createAppRouter();
+final appRouterProvider = Provider.family<GoRouter, bool>((ref, isFirstOpen) {
+  bool signedIn() {
+    final user = ref.read(authControllerProvider).user;
+    return user != null && user.emailVerified && !user.isAnonymous;
+  }
 
-GoRouter createAppRouter({String initialLocation = '/home'}) => GoRouter(
-  initialLocation: initialLocation,
+  final session = ValueNotifier(signedIn());
+  ref.listen(authControllerProvider, (_, _) {
+    session.value = signedIn();
+  });
+  final router = createAppRouter(
+    isFirstOpen: isFirstOpen,
+    isSignedIn: () => session.value,
+    refreshListenable: session,
+  );
+  ref.onDispose(() {
+    router.dispose();
+    session.dispose();
+  });
+  return router;
+});
+
+GoRouter createAppRouter({
+  String? initialLocation,
+  bool isFirstOpen = true,
+  bool Function()? isSignedIn,
+  Listenable? refreshListenable,
+}) => GoRouter(
+  initialLocation:
+      initialLocation ?? (isFirstOpen ? '/welcome' : '/auth/login'),
+  refreshListenable: refreshListenable,
+  redirect: (_, state) {
+    final entryRoute = const {
+      '/',
+      '/welcome',
+      '/auth/login',
+      '/auth/create-account',
+      '/auth/forgot-password',
+    }.contains(state.uri.path);
+    return entryRoute && (isSignedIn?.call() ?? false) ? '/home' : null;
+  },
   routes: [
     GoRoute(
-      path: '/payments/checkout',
-      name: AppRoutes.paymentCheckout,
-      builder: (_, state) => PaymentWebViewScreen(
-        session: state.extra is PaymentCheckoutSession
-            ? state.extra! as PaymentCheckoutSession
-            : null,
-      ),
-    ),
-    GoRoute(
-      path: '/payments/failed',
-      name: AppRoutes.paymentFailed,
-      builder: (_, state) => PaymentFailedScreen(
-        failure: state.extra is PaymentFailure
-            ? state.extra! as PaymentFailure
-            : const PaymentFailure(),
-      ),
+      path: '/consultation/chat/conversation',
+      name: AppRoutes.conversation,
+      builder: (_, state) {
+        final doctor = state.uri.queryParameters['doctor'];
+        final matches = sampleConversations.where(
+          (conversation) => conversation.doctorName == doctor,
+        );
+        if (doctor != null && matches.isEmpty) {
+          return const _RouteNotFound(message: 'Conversation not found');
+        }
+        return ConversationScreen(
+          conversation: matches.isEmpty
+              ? sampleConversations.first
+              : matches.first,
+        );
+      },
     ),
     GoRoute(
       path: '/doctor-portal',
@@ -118,11 +156,8 @@ GoRouter createAppRouter({String initialLocation = '/home'}) => GoRouter(
     GoRoute(
       path: '/appointments',
       name: AppRoutes.appointments,
-      builder: (_, state) => MyAppointmentsScreen(
-        initialBooking: state.extra is AppointmentDraft
-            ? state.extra! as AppointmentDraft
-            : null,
-      ),
+      builder: (_, state) =>
+          MyAppointmentsScreen(refreshOnOpen: state.extra is AppointmentDraft),
     ),
     GoRoute(path: '/', redirect: (_, _) => '/doctors'),
     GoRoute(
@@ -139,6 +174,11 @@ GoRouter createAppRouter({String initialLocation = '/home'}) => GoRouter(
       builder: (_, _) => const LoginScreen(),
     ),
     GoRoute(
+      path: '/auth/forgot-password',
+      name: AppRoutes.forgotPassword,
+      builder: (_, _) => const ForgotPasswordScreen(),
+    ),
+    GoRoute(
       path: '/auth/create-account',
       name: AppRoutes.createAccount,
       builder: (_, _) => const CreateAccountScreen(),
@@ -153,7 +193,9 @@ GoRouter createAppRouter({String initialLocation = '/home'}) => GoRouter(
     GoRoute(
       path: '/auth/profile',
       name: AppRoutes.setUpProfile,
-      builder: (_, _) => const SetUpProfileScreen(),
+      builder: (_, state) => SetUpProfileScreen(
+        isEditProfile: state.extra is bool ? state.extra! as bool : false,
+      ),
     ),
     GoRoute(
       path: '/home',
@@ -171,6 +213,9 @@ GoRouter createAppRouter({String initialLocation = '/home'}) => GoRouter(
           path: 'recommended',
           name: AppRoutes.recommendedDoctors,
           builder: (_, state) => RecommendedDoctorsScreen(
+            assessment: state.extra is TriageAssessment
+                ? state.extra! as TriageAssessment
+                : null,
             intake: state.extra is SymptomIntake
                 ? state.extra! as SymptomIntake
                 : null,
@@ -180,9 +225,16 @@ GoRouter createAppRouter({String initialLocation = '/home'}) => GoRouter(
           path: ':doctorId',
           name: AppRoutes.doctorDetail,
           builder: (context, state) {
-            final profile = _findProfile(state.pathParameters['doctorId']!);
+            final id = state.pathParameters['doctorId']!;
+            final extra = state.extra;
+            final profile = extra is DoctorProfile && extra.routeId == id
+                ? extra
+                : null;
             return profile == null
-                ? const _RouteNotFound(message: 'Doctor not found')
+                ? DoctorProfileLoader(
+                    doctorId: state.pathParameters['doctorId']!,
+                    builder: (profile) => DoctorDetailScreen(profile: profile),
+                  )
                 : DoctorDetailScreen(profile: profile);
           },
         ),
@@ -192,14 +244,17 @@ GoRouter createAppRouter({String initialLocation = '/home'}) => GoRouter(
       path: '/appointments/:doctorId/book',
       name: AppRoutes.bookAppointment,
       builder: (_, state) {
-        final profile = _findProfile(state.pathParameters['doctorId']!);
-        if (profile == null) {
-          return const _RouteNotFound(message: 'Doctor not found');
+        final draft = state.extra is AppointmentDraft
+            ? state.extra! as AppointmentDraft
+            : null;
+        final id = state.pathParameters['doctorId']!;
+        if (draft != null && draft.doctor.routeId == id) {
+          return BookAppointmentScreen(draft: draft);
         }
-        return BookAppointmentScreen(
-          draft: state.extra is AppointmentDraft
-              ? state.extra! as AppointmentDraft
-              : AppointmentDraft(doctor: profile),
+        return DoctorProfileLoader(
+          doctorId: id,
+          builder: (profile) =>
+              BookAppointmentScreen(draft: AppointmentDraft(doctor: profile)),
         );
       },
     ),
@@ -239,33 +294,6 @@ GoRouter createAppRouter({String initialLocation = '/home'}) => GoRouter(
   errorBuilder: (_, _) => const _RouteNotFound(message: 'Page not found'),
 );
 
-DoctorProfile? _findProfile(String id) {
-  for (final profile in sampleRecommendedProfiles) {
-    if (doctorProfileId(profile.summary.name) == id) return profile;
-  }
-  if (doctorProfileId(sampleDoctorProfile.summary.name) == id) {
-    return sampleDoctorProfile;
-  }
-  for (final doctor in sampleDoctors) {
-    if (doctorProfileId(doctor.name) == id) return profileForSummary(doctor);
-  }
-  for (final doctor in home.sampleDoctors) {
-    if (doctorProfileId(doctor.name) == id) {
-      return profileForSummary(
-        DoctorSummary(
-          name: doctor.name,
-          specialty: doctor.specialty,
-          distance: '',
-          experience: '',
-          availability: doctor.availability,
-          availableToday: doctor.availability == 'Available today',
-        ),
-      );
-    }
-  }
-  return null;
-}
-
 class _RouteNotFound extends StatelessWidget {
   const _RouteNotFound({required this.message});
   final String message;
@@ -293,8 +321,7 @@ class _RouteNotFound extends StatelessWidget {
 String? _bookingRedirect(GoRouterState state, {bool requireSchedule = false}) {
   final draft = state.extra;
   if (draft is! AppointmentDraft ||
-      doctorProfileId(draft.doctor.summary.name) !=
-          state.pathParameters['doctorId'] ||
+      draft.doctor.routeId != state.pathParameters['doctorId'] ||
       (requireSchedule && draft.scheduledAt == null)) {
     return '/appointments/${state.pathParameters['doctorId']}/book';
   }

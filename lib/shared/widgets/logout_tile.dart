@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/constants/app_routes.dart';
 import '../../core/constants/constants.dart';
+import '../../features/auth/providers.dart';
 
 class LogoutTile extends StatelessWidget {
   const LogoutTile({super.key});
@@ -29,9 +31,13 @@ class LogoutTile extends StatelessWidget {
           style: theme.textTheme.bodySmall,
         ),
         trailing: Icon(Icons.chevron_right_rounded, color: scheme.error),
-        // Authentication is currently a UI flow; replace with session cleanup
-        // before navigating when the auth repository is connected.
-        onTap: () => context.goNamed(AppRoutes.login),
+        onTap: () async {
+          final succeeded = await ProviderScope.containerOf(
+            context,
+            listen: false,
+          ).read(authControllerProvider.notifier).signOut();
+          if (succeeded && context.mounted) context.goNamed(AppRoutes.login);
+        },
       ),
     );
   }

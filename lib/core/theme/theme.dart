@@ -108,7 +108,6 @@ abstract final class AppTheme {
             horizontal: 20,
             vertical: AppSpacing.sm,
           ),
-          shape: RoundedRectangleBorder(borderRadius: AppRadius.button),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
@@ -119,7 +118,16 @@ abstract final class AppTheme {
             vertical: AppSpacing.sm,
           ),
           side: BorderSide(color: p.outline),
-          shape: RoundedRectangleBorder(borderRadius: AppRadius.button),
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          minimumSize: const Size(64, 0),
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          padding: const EdgeInsets.symmetric(
+            vertical: AppSpacing.sm * 0.5,
+            horizontal: AppSpacing.sm,
+          ),
         ),
       ),
       extensions: [AppExtras.forBrightness(p.brightness)],

@@ -1,11 +1,27 @@
 import 'package:flutter/material.dart';
 
+abstract final class ApiEndpoints {
+  static const String baseUrl =
+      'https://care-match-backend.onrender.com/api/v1';
+  static final String createDoctor = "/users/doctor";
+  static final String createPatient = "/users/patient";
+  static final String resetPassword = "/users/reset-password";
+  static final String doctors = "/users/doctors";
+  static final String profile = "/users/me";
+  static final String payments = "/payments";
+  static final String triage = "/triage";
+  static final String video = "/video/token";
+  static final String appointments = "/appointments";
+  static String appointmentStatus(String id) => "/appointments/$id/status";
+}
+
 /// App-wide, non-visual constants.
-///
 /// Visual tokens live in `app_colors.dart`, `app_typography.dart`,
 /// `app_spacing.dart`, and `app_radius.dart`.
 abstract final class AppConstants {
   static const String appName = 'Care Match';
+  static const int defaultConsultationFee = 100;
+  static const String defaultConsultationPrice = '৳$defaultConsultationFee';
 
   static const int defaultPageSize = 20;
   static const int otpLength = 6;

@@ -20,7 +20,7 @@ class ChatListScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(),
+      appBar: AppBar(title: const BrandHeader(), centerTitle: true),
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
@@ -33,8 +33,6 @@ class ChatListScreen extends StatelessWidget {
                 AppSpacing.lg,
               ),
               children: [
-                const BrandHeader(),
-                const SizedBox(height: AppSpacing.md),
                 const ChatIllustrationSlot(),
                 const SizedBox(height: AppSpacing.lg),
                 const ChatTitleBlock(),
@@ -46,7 +44,12 @@ class ChatListScreen extends StatelessWidget {
                   ConversationCard(
                     conversation: sampleConversations[i],
                     onTap: () {
-                      // TODO: navigate to the chat thread screen for this doctor
+                      context.pushNamed(
+                        AppRoutes.conversation,
+                        queryParameters: {
+                          'doctor': sampleConversations[i].doctorName,
+                        },
+                      );
                     },
                     onVideoTap: () {
                       context.pushNamed(AppRoutes.video);

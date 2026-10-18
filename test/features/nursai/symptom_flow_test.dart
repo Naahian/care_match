@@ -1,3 +1,4 @@
+import '../../support/nursai_test_scope.dart';
 import 'package:care_match/core/theme/theme.dart';
 import 'package:care_match/features/nursai/presentation/models/symptom_intake.dart';
 import 'package:care_match/features/nursai/presentation/screens/symptom_entry_screen.dart';
@@ -43,7 +44,7 @@ void main() {
                 ).copyWith(textScaler: TextScaler.linear(1.5)),
                 child: child!,
               ),
-              home: screen,
+              home: nursaiTestScope(screen),
             ),
           ),
         );
@@ -73,14 +74,14 @@ void main() {
   });
 
   testWidgets(
-    'Intake passes through preview assessment and recommended doctor navigation',
+    'Intake displays triage results before recommended doctor navigation',
     (tester) async {
       final router = createAppRouter(
         initialLocation: '/symptoms?symptoms=Sore%20throat',
       );
       addTearDown(router.dispose);
       await tester.pumpWidget(
-        Sizer(builder: (_, _, _) => MyApp(router: router)),
+        nursaiTestScope(Sizer(builder: (_, _, _) => MyApp(router: router))),
       );
       await tester.pumpAndSettle();
       final age = find.widgetWithText(TextFormField, 'Your age in years');
@@ -123,17 +124,36 @@ void main() {
       expect(data.location, 'Dhaka');
       expect(data.symptoms, 'Sore throat');
       expect(data.breathingDifficulty, BreathingDifficulty.no);
-      await tester.pump(const Duration(seconds: 4));
       await tester.pumpAndSettle();
-      expect(find.byType(RecommendedDoctorsScreen), findsOneWidget);
-      final sophia = find.text('Dr. Sophia Nguyen');
+      expect(find.byType(SymptomAssessmentScreen), findsOneWidget);
+      expect(find.text('Assessment from the service.'), findsOneWidget);
+      final browse = find.text('Browse recommended specialties');
       await tester.scrollUntilVisible(
-        sophia,
+        browse,
+        150,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.tap(browse);
+      await tester.pumpAndSettle();
+      expect(find.text('Dr. Emily Carter'), findsNothing);
+      expect(find.byType(RecommendedDoctorsScreen), findsOneWidget);
+      expect(
+        find.text('No doctors found. Try another search or specialty.'),
+        findsNothing,
+      );
+      expect(
+        find.text('Could not load doctors. Please try again.'),
+        findsNothing,
+      );
+      expect(find.text('Dr. Farzana Rahman'), findsOneWidget);
+      final doctor = find.text('Dr. Farzana Rahman');
+      await tester.scrollUntilVisible(
+        doctor,
         200,
         scrollable: find.byType(Scrollable).first,
       );
       await tester.pumpAndSettle();
-      await tester.tap(sophia);
+      await tester.tap(doctor);
       await tester.pumpAndSettle();
       expect(
         tester
@@ -141,7 +161,7 @@ void main() {
             .profile
             .summary
             .name,
-        'Dr. Sophia Nguyen',
+        'Dr. Farzana Rahman',
       );
     },
   );
@@ -151,7 +171,9 @@ void main() {
   ) async {
     final router = createAppRouter(initialLocation: '/symptoms/assessment');
     addTearDown(router.dispose);
-    await tester.pumpWidget(Sizer(builder: (_, _, _) => MyApp(router: router)));
+    await tester.pumpWidget(
+      nursaiTestScope(Sizer(builder: (_, _, _) => MyApp(router: router))),
+    );
     await tester.pumpAndSettle();
     expect(find.byType(SymptomEntryScreen), findsOneWidget);
   });

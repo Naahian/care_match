@@ -1,7 +1,10 @@
+import 'support/doctors_test_scope.dart';
+import 'support/auth_test_scope.dart';
 import 'package:care_match/core/constants/app_routes.dart';
 import 'package:care_match/features/auth/presentation/screens/create_account_screen.dart';
 import 'package:care_match/features/auth/presentation/screens/login_screen.dart';
-import 'package:care_match/features/auth/presentation/screens/set_up_profile_screen.dart';
+import 'package:care_match/features/auth/presentation/screens/forgot_password_screen.dart';
+import 'package:care_match/features/profile/presentation/screens/set_up_profile_screen.dart';
 import 'package:care_match/features/auth/presentation/screens/verify_number_screen.dart';
 import 'package:care_match/features/consultation/presentation/screens/chat_list_screen.dart';
 import 'package:care_match/features/consultation/presentation/screens/video_onboarding_screen.dart';
@@ -23,6 +26,7 @@ void main() {
   final destinations = <String, Type>{
     '/welcome': OnboardingScreen,
     '/auth/login': LoginScreen,
+    '/auth/forgot-password': ForgotPasswordScreen,
     '/auth/create-account': CreateAccountScreen,
     '/auth/verify-number?phone=%2B880123456789': VerifyNumberScreen,
     '/auth/profile': SetUpProfileScreen,
@@ -39,9 +43,28 @@ void main() {
       final router = createAppRouter(initialLocation: entry.key);
       addTearDown(router.dispose);
       await tester.pumpWidget(
-        Sizer(builder: (_, _, _) => MyApp(router: router)),
+        _routerTestScope(Sizer(builder: (_, _, _) => MyApp(router: router))),
       );
-      await tester.pumpAndSettle();
+      if (entry.value == OnboardingScreen) {
+        // The welcome illustration floats continuously, so it never settles.
+        await tester.pump();
+        await tester.pump(const Duration(seconds: 1));
+        expect(
+          find.text('I have a sore throat\nand mild fever.'),
+          findsOneWidget,
+        );
+        expect(find.text('Recommended'), findsOneWidget);
+        await tester.tap(find.text('Next'));
+        await tester.pump();
+        await tester.pump(const Duration(seconds: 1));
+        expect(
+          find.text('How are you feeling today?\nAny improvement?'),
+          findsOneWidget,
+        );
+        expect(find.text('I’m feeling better, thank you!'), findsOneWidget);
+      } else {
+        await tester.pumpAndSettle();
+      }
       expect(find.byType(entry.value), findsOneWidget);
       if (entry.value == FindDoctorScreen) {
         expect(
@@ -57,6 +80,14 @@ void main() {
           '+880123456789',
         );
       }
+      if (entry.value == SetUpProfileScreen) {
+        expect(
+          tester
+              .widget<SetUpProfileScreen>(find.byType(SetUpProfileScreen))
+              .isEditProfile,
+          isFalse,
+        );
+      }
       await tester.pumpWidget(const SizedBox());
     });
   }
@@ -64,10 +95,10 @@ void main() {
   testWidgets(
     'Doctor selection preserves the doctor and supports back navigation',
     (tester) async {
-      final router = createAppRouter();
+      final router = createAppRouter(initialLocation: '/doctors');
       addTearDown(router.dispose);
       await tester.pumpWidget(
-        Sizer(builder: (_, _, _) => MyApp(router: router)),
+        _routerTestScope(Sizer(builder: (_, _, _) => MyApp(router: router))),
       );
       await tester.pumpAndSettle();
       final card = find.byType(DoctorCard).first;
@@ -99,12 +130,26 @@ void main() {
   ) async {
     final router = createAppRouter(initialLocation: '/auth/login');
     addTearDown(router.dispose);
-    await tester.pumpWidget(Sizer(builder: (_, _, _) => MyApp(router: router)));
+    await tester.pumpWidget(
+      _routerTestScope(Sizer(builder: (_, _, _) => MyApp(router: router))),
+    );
     await tester.pumpAndSettle();
     await tester.ensureVisible(find.text('Sign up'));
     await tester.tap(find.text('Sign up'));
     await tester.pumpAndSettle();
     expect(find.byType(CreateAccountScreen), findsOneWidget);
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Full name'),
+      'Test Patient',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Email address'),
+      'patient@example.com',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Password'),
+      'secret123',
+    );
     await tester.enterText(
       find.widgetWithText(TextFormField, 'Phone number'),
       '9876543210',
@@ -121,7 +166,7 @@ void main() {
       tester
           .widget<VerifyNumberScreen>(find.byType(VerifyNumberScreen))
           .phoneNumber,
-      '+1 9876543210',
+      '+19876543210',
     );
     await tester.enterText(find.byType(TextField), '123456');
     await tester.pump();
@@ -130,6 +175,12 @@ void main() {
     await tester.tap(verify);
     await tester.pumpAndSettle();
     expect(find.byType(SetUpProfileScreen), findsOneWidget);
+    expect(
+      tester
+          .widget<SetUpProfileScreen>(find.byType(SetUpProfileScreen))
+          .isEditProfile,
+      isFalse,
+    );
     await tester.ensureVisible(find.text('Skip for now'));
     await tester.tap(find.text('Skip for now'));
     await tester.pumpAndSettle();
@@ -138,12 +189,34 @@ void main() {
     await tester.pumpWidget(const SizedBox());
   });
 
+  testWidgets('Edit profile opens setup in edit mode', (tester) async {
+    final router = createAppRouter(initialLocation: '/profile');
+    addTearDown(router.dispose);
+    await tester.pumpWidget(
+      _routerTestScope(Sizer(builder: (_, _, _) => MyApp(router: router))),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Edit profile'));
+    await tester.pumpAndSettle();
+    expect(
+      tester
+          .widget<SetUpProfileScreen>(find.byType(SetUpProfileScreen))
+          .isEditProfile,
+      isTrue,
+    );
+    expect(find.text('Save Edits'), findsOneWidget);
+    expect(find.text('Skip for now'), findsNothing);
+    await tester.pumpWidget(const SizedBox());
+  });
+
   testWidgets('Unknown doctor links do not show an unrelated sample profile', (
     tester,
   ) async {
     final router = createAppRouter(initialLocation: '/doctors/unknown');
     addTearDown(router.dispose);
-    await tester.pumpWidget(Sizer(builder: (_, _, _) => MyApp(router: router)));
+    await tester.pumpWidget(
+      _routerTestScope(Sizer(builder: (_, _, _) => MyApp(router: router))),
+    );
     await tester.pumpAndSettle();
     expect(find.text('Doctor not found'), findsOneWidget);
     expect(find.byType(DoctorDetailScreen), findsNothing);
@@ -152,3 +225,6 @@ void main() {
     expect(find.byType(VideoOnboardingScreen), findsOneWidget);
   });
 }
+
+Widget _routerTestScope(Widget child) =>
+    authTestScope(child, doctorsRepository: TestDoctorsRepository());

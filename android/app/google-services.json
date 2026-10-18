@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "217674195244",
+    "project_id": "care-match-backend",
+    "storage_bucket": "care-match-backend.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:217674195244:android:25e0ba62fd0b1d6c340c89",
+        "android_client_info": {
+          "package_name": "com.example.care_match"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA8jbkbC9VDsWmvc4_jXjn9_AREyh-EG8g"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

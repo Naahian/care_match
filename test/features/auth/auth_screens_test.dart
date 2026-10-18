@@ -1,25 +1,31 @@
+import '../../support/auth_test_scope.dart';
 import 'package:care_match/core/theme/theme.dart';
 import 'package:care_match/features/auth/presentation/screens/login_screen.dart';
+import 'package:care_match/features/auth/presentation/screens/forgot_password_screen.dart';
 import 'package:care_match/features/auth/presentation/screens/create_account_screen.dart';
+import 'package:care_match/features/auth/presentation/widgets/doctor_registration_fields.dart';
 import 'package:care_match/features/auth/presentation/screens/verify_number_screen.dart';
-import 'package:care_match/features/auth/presentation/screens/set_up_profile_screen.dart';
+import 'package:care_match/features/profile/presentation/screens/set_up_profile_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sizer/sizer.dart';
 
-Widget app(Widget screen, {double textScale = 1, bool dark = false}) => Sizer(
-  builder: (context, orientation, deviceType) => MaterialApp(
-    theme: dark ? AppTheme.dark : AppTheme.light,
-    builder: (context, child) => MediaQuery(
-      data: MediaQuery.of(
-        context,
-      ).copyWith(textScaler: TextScaler.linear(textScale)),
-      child: child!,
-    ),
-    home: screen,
-  ),
-);
+Widget app(Widget screen, {double textScale = 1, bool dark = false}) =>
+    authTestScope(
+      Sizer(
+        builder: (context, orientation, deviceType) => MaterialApp(
+          theme: dark ? AppTheme.dark : AppTheme.light,
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(
+              context,
+            ).copyWith(textScaler: TextScaler.linear(textScale)),
+            child: child!,
+          ),
+          home: screen,
+        ),
+      ),
+    );
 
 void main() {
   setUpAll(() => GoogleFonts.config.allowRuntimeFetching = false);
@@ -34,15 +40,27 @@ void main() {
       addTearDown(tester.view.reset);
       for (final screen in [
         const LoginScreen(),
+        const ForgotPasswordScreen(),
         const CreateAccountScreen(),
         const VerifyNumberScreen(),
-        const SetUpProfileScreen(),
+        const SetUpProfileScreen(isEditProfile: false),
       ]) {
         await tester.pumpWidget(
           app(screen, textScale: 1.5, dark: size.width > 600),
         );
         await tester.pump();
         expect(tester.takeException(), isNull);
+        if (screen is CreateAccountScreen) {
+          await tester.ensureVisible(
+            find.byType(DropdownButtonFormField<bool>),
+          );
+          await tester.tap(find.byType(DropdownButtonFormField<bool>));
+          await tester.pumpAndSettle();
+          await tester.tap(find.text('Doctor').last);
+          await tester.pumpAndSettle();
+          await tester.ensureVisible(find.byType(DoctorRegistrationFields));
+          expect(tester.takeException(), isNull);
+        }
         await tester.pumpWidget(const SizedBox());
       }
     });
@@ -109,6 +127,9 @@ void main() {
     'OTP filters pasted input and enables verification at six digits',
     (tester) async {
       await tester.pumpWidget(app(const VerifyNumberScreen()));
+      await tester.ensureVisible(find.text('Resend'));
+      await tester.tap(find.text('Resend'));
+      await tester.pump();
       final button = find.widgetWithText(FilledButton, 'Verify & continue');
       expect(tester.widget<FilledButton>(button).onPressed, isNull);
       await tester.enterText(find.byType(TextField), 'a2849167');
@@ -137,7 +158,9 @@ void main() {
   );
 
   testWidgets('Profile selections update locally', (tester) async {
-    await tester.pumpWidget(app(const SetUpProfileScreen()));
+    await tester.pumpWidget(
+      app(const SetUpProfileScreen(isEditProfile: false)),
+    );
     await tester.tap(find.text('Select your gender'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Female'));

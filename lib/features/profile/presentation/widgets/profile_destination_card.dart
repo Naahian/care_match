@@ -20,14 +20,14 @@ class ProfileDestinationCard extends StatelessWidget {
       contentPadding: AppSpacing.card,
       leading: Icon(
         icon,
-        color: Theme.of(context).colorScheme.primary,
+        color: Theme.of(context).colorScheme.secondary,
         size: 32,
       ),
       title: Text(title, style: Theme.of(context).textTheme.titleMedium),
       subtitle: Text(subtitle, style: Theme.of(context).textTheme.bodySmall),
       trailing: Icon(
         Icons.chevron_right_rounded,
-        color: Theme.of(context).colorScheme.primary,
+        color: Theme.of(context).colorScheme.secondary,
       ),
       onTap: onTap,
     ),

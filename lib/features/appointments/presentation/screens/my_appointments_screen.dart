@@ -1,79 +1,86 @@
-import 'package:care_match/core/constants/constants.dart';
-import 'package:care_match/core/constants/app_routes.dart';
-import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-import '../models/appointment_entry.dart';
-import '../models/appointment_draft.dart';
-import '../widgets/patient_appointment_card.dart';
-import '../widgets/appointment_details_sheet.dart';
+import 'dart:async';
 
-class MyAppointmentsScreen extends StatefulWidget {
-  const MyAppointmentsScreen({super.key, this.initialBooking});
-  final AppointmentDraft? initialBooking;
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../../../core/constants/constants.dart';
+import '../../../../core/constants/app_routes.dart';
+import '../../../../shared/widgets/empty_state.dart';
+import '../controllers/appointments_controller.dart';
+import '../controllers/appointments_state.dart';
+import '../widgets/appointment_card_shimmer.dart';
+import '../widgets/patient_appointment_card.dart';
+
+class MyAppointmentsScreen extends ConsumerStatefulWidget {
+  const MyAppointmentsScreen({super.key, this.refreshOnOpen = false});
+
+  final bool refreshOnOpen;
+
   @override
-  State<MyAppointmentsScreen> createState() => _MyAppointmentsScreenState();
+  ConsumerState<MyAppointmentsScreen> createState() =>
+      _MyAppointmentsScreenState();
 }
 
-class _MyAppointmentsScreenState extends State<MyAppointmentsScreen> {
-  late final _appointments = sampleAppointmentEntries();
+class _MyAppointmentsScreenState extends ConsumerState<MyAppointmentsScreen> {
   @override
   void initState() {
     super.initState();
-    final booking = widget.initialBooking;
-    if (booking != null && booking.scheduledAt != null) {
-      _appointments.insert(
-        0,
-        AppointmentEntry(
-          id: 'new-booking',
-          doctor: booking.doctor.summary,
-          dateTime: booking.scheduledAt!,
-          type: booking.type,
-          status: AppointmentStatus.upcoming,
-          location: booking.doctor.hospital,
-        ),
-      );
-    }
+    scheduleMicrotask(() {
+      if (mounted) {
+        unawaited(
+          ref
+              .read(appointmentsControllerProvider.notifier)
+              .load(refresh: widget.refreshOnOpen),
+        );
+      }
+    });
   }
 
-  AppointmentStatus _status = AppointmentStatus.upcoming;
-  void _view(AppointmentEntry appointment) {
-    showModalBottomSheet<void>(
+  Future<void> _cancel(String id) async {
+    final confirmed = await showDialog<bool>(
       context: context,
-      useSafeArea: true,
-      isScrollControlled: true,
-      showDragHandle: true,
-      backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
-      constraints: BoxConstraints(
-        maxWidth: 600,
-        maxHeight: MediaQuery.sizeOf(context).height * 0.85,
+      builder: (context) => AlertDialog(
+        title: const Text('Cancel appointment?'),
+        content: const Text(
+          'This will cancel your appointment with the doctor.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Keep appointment'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Cancel appointment'),
+          ),
+        ],
       ),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
-      ),
-      clipBehavior: Clip.antiAlias,
-      builder: (_) => AppointmentDetailsSheet(appointment: appointment),
     );
-  }
-
-  void _primary(AppointmentEntry appointment) {
-    if (appointment.status != AppointmentStatus.upcoming) return;
-    switch (appointment.type) {
-      case ConsultationType.video:
-        context.pushNamed(AppRoutes.video);
-      case ConsultationType.chat:
-        context.pushNamed(AppRoutes.chat);
-      case ConsultationType.inPerson:
-        return;
+    if (confirmed == true && mounted) {
+      await ref
+          .read(appointmentsControllerProvider.notifier)
+          .cancelAppointment(id);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final appointments = _appointments
-        .where((appointment) => appointment.status == _status)
-        .toList();
+    final state = ref.watch(appointmentsControllerProvider);
+    final controller = ref.read(appointmentsControllerProvider.notifier);
+    final appointments = state.visibleAppointments;
+    final busy = state.isLoading || state.updatingIds.isNotEmpty;
     return Scaffold(
-      appBar: AppBar(title: const Text('My Appointments')),
+      appBar: AppBar(
+        title: const Text('My Appointments'),
+        actions: [
+          IconButton(
+            tooltip: 'Refresh appointments',
+            onPressed: busy ? null : () => controller.load(refresh: true),
+            icon: const Icon(Icons.refresh_rounded),
+          ),
+        ],
+      ),
       bottomNavigationBar: SafeArea(
         top: false,
         child: Padding(
@@ -98,36 +105,112 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen> {
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 600),
-            child: ListView(
-              padding: AppSpacing.page,
-              children: [
-                Wrap(
-                  spacing: AppSpacing.sm,
-                  runSpacing: AppSpacing.sm,
-                  children: [
-                    for (final status in AppointmentStatus.values)
-                      ChoiceChip(
-                        label: Text(switch (status) {
-                          AppointmentStatus.upcoming => 'Upcoming',
-                          AppointmentStatus.completed => 'Completed',
-                          AppointmentStatus.cancelled => 'Cancelled',
-                        }),
-                        selected: _status == status,
-                        onSelected: (_) => setState(() => _status = status),
+            child: RefreshIndicator(
+              onRefresh: () => controller.load(refresh: true),
+              child: CustomScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                slivers: [
+                  SliverPadding(
+                    padding: AppSpacing.page,
+                    sliver: SliverToBoxAdapter(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Wrap(
+                            spacing: AppSpacing.sm,
+                            runSpacing: AppSpacing.sm,
+                            children: [
+                              for (final filter in AppointmentsFilter.values)
+                                ChoiceChip(
+                                  label: Text(switch (filter) {
+                                    AppointmentsFilter.upcoming => 'Upcoming',
+                                    AppointmentsFilter.completed => 'Completed',
+                                    AppointmentsFilter.cancelled => 'Cancelled',
+                                  }),
+                                  selected: state.filter == filter,
+                                  onSelected: (_) =>
+                                      controller.selectFilter(filter),
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: AppSpacing.md),
+                          if (state.isLoading)
+                            for (var i = 0; i < 3; i++) ...[
+                              const AppointmentCardShimmer(),
+                              const SizedBox(height: AppSpacing.sm),
+                            ],
+                          if (state.errorMessage != null) ...[
+                            Text(state.errorMessage!),
+                            TextButton(
+                              onPressed: busy
+                                  ? null
+                                  : () => controller.load(refresh: true),
+                              child: const Text('Retry'),
+                            ),
+                          ],
+                          if (!state.isLoading &&
+                              state.doctorDetailsUnavailable) ...[
+                            const Text(
+                              'Some doctor details are unavailable. You can still manage your appointments.',
+                            ),
+                            const SizedBox(height: AppSpacing.sm),
+                          ],
+                        ],
                       ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.md),
-                if (appointments.isEmpty) const Text('No appointments yet.'),
-                for (final appointment in appointments) ...[
-                  PatientAppointmentCard(
-                    appointment: appointment,
-                    onView: () => _view(appointment),
-                    onPrimary: () => _primary(appointment),
+                    ),
                   ),
-                  const SizedBox(height: AppSpacing.sm),
+                  if (state.hasLoaded &&
+                      !state.isLoading &&
+                      state.errorMessage == null &&
+                      appointments.isEmpty)
+                    SliverFillRemaining(
+                      hasScrollBody: false,
+                      child: EmptyState(
+                        icon: Icons.event_note_outlined,
+                        message: switch (state.filter) {
+                          AppointmentsFilter.upcoming =>
+                            'No upcoming appointments.',
+                          AppointmentsFilter.completed =>
+                            'No completed appointments.',
+                          AppointmentsFilter.cancelled =>
+                            'No cancelled appointments.',
+                        },
+                      ),
+                    ),
+                  if (!state.isLoading && appointments.isNotEmpty)
+                    SliverPadding(
+                      padding: const EdgeInsets.fromLTRB(
+                        AppSpacing.md,
+                        0,
+                        AppSpacing.md,
+                        AppSpacing.md,
+                      ),
+                      sliver: SliverList.separated(
+                        itemCount: appointments.length,
+                        separatorBuilder: (_, _) =>
+                            const SizedBox(height: AppSpacing.sm),
+                        itemBuilder: (context, index) {
+                          final entry = appointments[index];
+                          return PatientAppointmentCard(
+                            key: ValueKey(entry.appointment.id),
+                            appointment: entry,
+                            isUpdating: state.updatingIds.contains(
+                              entry.appointment.id,
+                            ),
+                            errorMessage:
+                                state.updateErrors[entry.appointment.id],
+                            onCancel:
+                                state.uncertainIds.contains(
+                                  entry.appointment.id,
+                                )
+                                ? null
+                                : () => _cancel(entry.appointment.id),
+                          );
+                        },
+                      ),
+                    ),
                 ],
-              ],
+              ),
             ),
           ),
         ),

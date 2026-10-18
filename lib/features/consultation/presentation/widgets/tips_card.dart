@@ -30,14 +30,6 @@ class TipsCard extends StatelessWidget {
                   'Camera, microphone and a recent health update '
                   '(if any).',
             ),
-            SizedBox(height: AppSpacing.lg),
-            TipRow(
-              icon: Icons.event_repeat_outlined,
-              title: 'Need to reschedule?',
-              description:
-                  'You can change your appointment up to 1 hour '
-                  'before the session.',
-            ),
           ],
         ),
       ),

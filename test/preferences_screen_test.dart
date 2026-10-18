@@ -1,3 +1,4 @@
+import 'support/auth_test_scope.dart';
 import 'package:care_match/core/theme/theme.dart';
 import 'package:care_match/features/settings/preferences_controller.dart';
 import 'package:care_match/features/settings/presentation/screens/preferences_screen.dart';
@@ -49,7 +50,9 @@ void main() {
   ) async {
     final router = createAppRouter(initialLocation: '/home');
     addTearDown(router.dispose);
-    await tester.pumpWidget(Sizer(builder: (_, _, _) => MyApp(router: router)));
+    await tester.pumpWidget(
+      authTestScope(Sizer(builder: (_, _, _) => MyApp(router: router))),
+    );
     await tester.pumpAndSettle();
     await tester.tap(find.byTooltip('Settings'));
     await tester.pumpAndSettle();
@@ -63,13 +66,6 @@ void main() {
     await tester.tap(find.text('System'));
     await tester.pumpAndSettle();
     expect(appPreferences.themeMode, ThemeMode.system);
-    await tester.scrollUntilVisible(
-      find.text('Share anonymized AI chat data'),
-      150,
-    );
-    await tester.tap(find.text('Share anonymized AI chat data'));
-    await tester.pumpAndSettle();
-    expect(appPreferences.shareAnonymousData, isFalse);
     await tester.scrollUntilVisible(find.text('Larger text'), 150);
     await tester.tap(find.text('Larger text'));
     await tester.pumpAndSettle();

@@ -2,10 +2,12 @@ import 'package:care_match/core/constants/constants.dart';
 import 'package:flutter/material.dart';
 
 import '../../../shared/widgets/brand_header.dart';
+import 'widgets/consultation_illustration.dart';
 import 'widgets/final_controls.dart';
 import 'widgets/final_page.dart';
 import 'widgets/standard_controls.dart';
 import 'widgets/standard_page.dart';
+import 'widgets/symptom_illustration.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({
@@ -74,6 +76,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             'Tell us what you\u2019re experiencing, and our AI '
                             'will match you with the right doctor \u2014 near you.',
                         imageAsset: 'assets/images/welcome_2.png',
+                        illustration: SymptomIllustration(),
                       ),
                       StandardPage(
                         title: 'Consult via chat or video',
@@ -82,6 +85,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             'personalized guidance \u2014 all from the comfort '
                             'of your home.',
                         imageAsset: 'assets/images/welcome_1.png',
+                        illustration: ConsultationIllustration(),
                       ),
                       StandardPage(
                         title: 'Your health data stays private',

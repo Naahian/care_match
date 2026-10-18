@@ -24,10 +24,15 @@ enum ConsultationType {
   final String description;
 }
 
-enum AppointmentPaymentMethod { googlePay, applePay }
+enum AppointmentPaymentMethod {
+  sslcommerz('SSLCommerz'),
+  bkash('bKash');
 
-/// Local UI draft shared by the booking steps. Replace sample availability and
-/// pricing with the appointments API before accepting real bookings.
+  const AppointmentPaymentMethod(this.label);
+  final String label;
+}
+
+/// Local UI draft shared by the booking steps. Prices are expressed in BDT.
 class AppointmentDraft {
   AppointmentDraft({required this.doctor});
   final DoctorProfile doctor;
@@ -36,15 +41,20 @@ class AppointmentDraft {
   String notes = '';
   DateTime? date;
   TimeOfDay? time;
-  AppointmentPaymentMethod paymentMethod = AppointmentPaymentMethod.googlePay;
+  AppointmentPaymentMethod paymentMethod = AppointmentPaymentMethod.sslcommerz;
 
-  String priceFor(ConsultationType type) => switch (type) {
+  String _rawPriceFor(ConsultationType type) => switch (type) {
     ConsultationType.video => doctor.videoPrice,
     ConsultationType.chat => doctor.chatPrice,
     ConsultationType.inPerson => doctor.inPersonPrice,
   };
+  String priceFor(ConsultationType type) {
+    final fee = double.tryParse(_rawPriceFor(type).replaceAll('৳', '').trim());
+    return fee == null ? 'Not provided' : appointmentMoney(fee);
+  }
+
   double? get consultationFee =>
-      double.tryParse(priceFor(type).replaceAll(r'$', ''));
+      double.tryParse(_rawPriceFor(type).replaceAll('৳', '').trim());
   double get serviceFee => 4;
   double? get total =>
       consultationFee == null ? null : consultationFee! + serviceFee;
@@ -54,4 +64,4 @@ class AppointmentDraft {
 }
 
 String appointmentMoney(double value) =>
-    '\$${value.toStringAsFixed(value == value.roundToDouble() ? 0 : 2)}';
+    '৳${value.toStringAsFixed(value == value.roundToDouble() ? 0 : 2)}';

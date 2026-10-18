@@ -21,13 +21,12 @@ class FinalPage extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
         child: Column(
           children: [
-            const SizedBox(height: AppSpacing.md),
             const Expanded(
+              flex: 4,
               child: IllustrationSlot(
                 imageAsset: 'assets/images/welcome_4.png',
               ),
             ),
-            const SizedBox(height: AppSpacing.lg),
             Text(
               'Better care starts here',
               textAlign: TextAlign.center,
@@ -82,6 +81,7 @@ class FinalPage extends StatelessWidget {
                 ),
               ],
             ),
+            Expanded(flex: 1, child: const SizedBox(height: AppSpacing.lg)),
           ],
         ),
       ),
