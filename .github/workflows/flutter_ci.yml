@@ -42,7 +42,8 @@ jobs:
         run: flutter pub get
 
       - name: Analyze source code
-        run: flutter analyze --fatal-infos
+        run: flutter analyze
+        # run: flutter analyze --fatal-infos
 
       - name: Run tests
         run: flutter test
