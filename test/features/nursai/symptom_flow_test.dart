@@ -12,12 +12,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sizer/sizer.dart';
 
-const intake = SymptomIntake(
+final intake = SymptomIntake(
   symptoms: 'Sore throat',
   age: 28,
-  duration: '1–3 days',
+  durationDays: 7,
+  medicalHistory: 'none',
+  currentMedications: ['none'],
   location: 'Dhaka',
-  breathingDifficulty: BreathingDifficulty.no,
 );
 
 void main() {
@@ -31,8 +32,8 @@ void main() {
       addTearDown(tester.view.reset);
       for (final screen in [
         const SymptomEntryScreen(),
-        const SymptomAssessmentScreen(intake: intake),
-        const RecommendedDoctorsScreen(intake: intake),
+        SymptomAssessmentScreen(intake: intake),
+        RecommendedDoctorsScreen(intake: intake),
       ]) {
         await tester.pumpWidget(
           Sizer(
@@ -73,6 +74,41 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('Rejects age and duration outside the API limits', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      Sizer(
+        builder: (_, _, _) => MaterialApp(
+          theme: AppTheme.light,
+          home: const SymptomEntryScreen(initialSymptoms: 'Sore throat'),
+        ),
+      ),
+    );
+    final age = find.widgetWithText(TextFormField, 'Your age in years');
+    await tester.scrollUntilVisible(
+      age,
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.enterText(age, '131');
+    final duration = find.widgetWithText(TextFormField, 'Duration in days');
+    await tester.scrollUntilVisible(
+      duration,
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.enterText(duration, '3651');
+    await tester.tap(find.text('Continue'));
+    await tester.pump();
+    expect(find.byType(SymptomEntryScreen), findsOneWidget);
+    expect(find.text('Enter an age between 0 and 130.'), findsOneWidget);
+    expect(
+      find.text('Enter a duration between 0 and 3650 days.'),
+      findsOneWidget,
+    );
+  });
+
   testWidgets(
     'Intake displays triage results before recommended doctor navigation',
     (tester) async {
@@ -91,16 +127,13 @@ void main() {
         scrollable: find.byType(Scrollable).first,
       );
       await tester.enterText(age, '28');
-      final duration = find.byType(DropdownButtonFormField<String>);
+      final duration = find.widgetWithText(TextFormField, 'Duration in days');
       await tester.scrollUntilVisible(
         duration,
         200,
         scrollable: find.byType(Scrollable).first,
       );
-      await tester.tap(duration);
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('1–3 days').last);
-      await tester.pumpAndSettle();
+      await tester.enterText(duration, '7');
       final location = find.widgetWithText(TextFormField, 'Your city or area');
       await tester.scrollUntilVisible(
         location,
@@ -108,12 +141,21 @@ void main() {
         scrollable: find.byType(Scrollable).first,
       );
       await tester.enterText(location, 'Dhaka');
-      await tester.scrollUntilVisible(
-        find.widgetWithText(ChoiceChip, 'No'),
-        200,
-        scrollable: find.byType(Scrollable).first,
-      );
-      await tester.tap(find.widgetWithText(ChoiceChip, 'No'));
+      for (final field in [
+        ('Medical history (optional)', 'none'),
+        (
+          'Current medications (optional)',
+          ' Medicine A, Medicine B\nMedicine C ',
+        ),
+      ]) {
+        final input = find.widgetWithText(TextFormField, field.$1);
+        await tester.scrollUntilVisible(
+          input,
+          200,
+          scrollable: find.byType(Scrollable).first,
+        );
+        await tester.enterText(input, field.$2);
+      }
       await tester.tap(find.text('Continue'));
       await tester.pump();
       expect(find.byType(SymptomAssessmentScreen), findsOneWidget);
@@ -123,7 +165,13 @@ void main() {
       expect(data.age, 28);
       expect(data.location, 'Dhaka');
       expect(data.symptoms, 'Sore throat');
-      expect(data.breathingDifficulty, BreathingDifficulty.no);
+      expect(data.durationDays, 7);
+      expect(data.medicalHistory, 'none');
+      expect(data.currentMedications, [
+        'Medicine A',
+        'Medicine B',
+        'Medicine C',
+      ]);
       await tester.pumpAndSettle();
       expect(find.byType(SymptomAssessmentScreen), findsOneWidget);
       expect(find.text('Assessment from the service.'), findsOneWidget);

@@ -22,31 +22,43 @@ class QuickAction extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return InkWell(
-      onTap: onTap,
-      borderRadius: AppRadius.card,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
-        child: Column(
-          children: [
-            Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                color: background,
-                shape: BoxShape.circle,
+    return Material(
+      color: theme.colorScheme.surface,
+      borderRadius: AppRadius.sheet,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: AppRadius.sheet,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.xs,
+            12,
+            AppSpacing.xs,
+            10,
+          ),
+          child: Column(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: background,
+                  borderRadius: AppRadius.card,
+                ),
+                child: Icon(icon, color: foreground, size: 24),
               ),
-              child: Icon(icon, color: foreground, size: 28),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              label,
-              textAlign: TextAlign.center,
-              style: theme.textTheme.labelLarge?.copyWith(
-                color: theme.colorScheme.onPrimaryContainer,
+              const Spacer(),
+              Text(
+                label,
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: theme.colorScheme.onSurface,
+                  height: 1.15,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

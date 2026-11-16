@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../models/appointment_draft.dart';
 import '../widgets/appointment_continue_button.dart';
 import '../widgets/appointment_doctor_card.dart';
+import '../widgets/booking_flow_header.dart';
 import '../widgets/appointment_time_slots.dart';
 
 class AppointmentDateTimeScreen extends StatefulWidget {
@@ -102,19 +103,21 @@ class _AppointmentDateTimeScreenState extends State<AppointmentDateTimeScreen> {
         ? const <DateTime>[]
         : _availability.slotsForDate(date, now: now);
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Select date & time'),
-        centerTitle: true,
-      ),
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 600),
             child: Column(
               children: [
+                const BookingFlowHeader(title: 'Select date & time', step: 2),
                 Expanded(
                   child: ListView(
-                    padding: AppSpacing.page,
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.lg,
+                      0,
+                      AppSpacing.lg,
+                      AppSpacing.md,
+                    ),
                     children: [
                       AppointmentDoctorCard(draft: widget.draft),
                       const SizedBox(height: AppSpacing.md),
@@ -127,20 +130,23 @@ class _AppointmentDateTimeScreenState extends State<AppointmentDateTimeScreen> {
                         )
                       else ...[
                         Card(
-                          child: CalendarDatePicker(
-                            key: ValueKey(date),
-                            initialDate: date,
-                            firstDate: _today,
-                            lastDate: _lastDate,
-                            selectableDayPredicate: (day) =>
-                                _canSelectDate(day, now),
-                            onDateChanged: (day) {
-                              if (!_canSelectDate(day, widget.now())) return;
-                              setState(() {
-                                widget.draft.date = DateUtils.dateOnly(day);
-                                widget.draft.time = null;
-                              });
-                            },
+                          child: Padding(
+                            padding: const EdgeInsets.all(AppSpacing.xs),
+                            child: CalendarDatePicker(
+                              key: ValueKey(date),
+                              initialDate: date,
+                              firstDate: _today,
+                              lastDate: _lastDate,
+                              selectableDayPredicate: (day) =>
+                                  _canSelectDate(day, now),
+                              onDateChanged: (day) {
+                                if (!_canSelectDate(day, widget.now())) return;
+                                setState(() {
+                                  widget.draft.date = DateUtils.dateOnly(day);
+                                  widget.draft.time = null;
+                                });
+                              },
+                            ),
                           ),
                         ),
                         const SizedBox(height: AppSpacing.md),
@@ -174,6 +180,13 @@ class _AppointmentDateTimeScreenState extends State<AppointmentDateTimeScreen> {
                             });
                           },
                         ),
+                        if (widget.draft.time == null) ...[
+                          const SizedBox(height: AppSpacing.lg),
+                          Text(
+                            'Choose a time to continue',
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ],
                       ],
                     ],
                   ),

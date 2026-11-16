@@ -14,6 +14,7 @@ class NursaiRepositoryImpl implements NursaiRepository {
   @override
   Future<TriageAssessment> assess(SymptomIntake intake) async {
     try {
+      print(TriageRequestModel(intake).toJson());
       final response = await dio.post<Object?>(
         ApiEndpoints.triage,
         data: TriageRequestModel(intake).toJson(),

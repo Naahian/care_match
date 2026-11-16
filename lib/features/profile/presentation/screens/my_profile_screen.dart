@@ -1,5 +1,6 @@
 import 'package:care_match/core/constants/constants.dart';
 import 'package:care_match/core/constants/app_routes.dart';
+import 'package:care_match/features/profile/domain/entities/user_profile.dart';
 import 'package:care_match/shared/widgets/bottom_navbar.dart';
 import 'package:care_match/shared/widgets/logout_tile.dart';
 import 'package:flutter/material.dart';
@@ -27,11 +28,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
   }
 
   void _edit(BuildContext context) {
-    context.pushNamed(AppRoutes.setUpProfile, extra: true).then((_) {
-      if (mounted) {
-        ref.read(profileControllerProvider.notifier).load(refresh: true);
-      }
-    });
+    context.pushNamed(AppRoutes.setUpProfile, extra: true);
   }
 
   @override
@@ -92,46 +89,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                               ),
                             ],
                           ),
-                        Center(
-                          child: Stack(
-                            children: [
-                              CircleAvatar(
-                                radius: 56,
-                                backgroundColor: scheme.primaryContainer,
-                                child: profile?.photoUrl == null
-                                    ? Icon(
-                                        Icons.person_outline_rounded,
-                                        size: 64,
-                                        color: scheme.primary,
-                                      )
-                                    : ClipOval(
-                                        child: Image.network(
-                                          profile!.photoUrl!,
-                                          width: 112,
-                                          height: 112,
-                                          fit: BoxFit.cover,
-                                          errorBuilder: (_, _, _) => Icon(
-                                            Icons.person_outline_rounded,
-                                            size: 64,
-                                            color: scheme.primary,
-                                          ),
-                                        ),
-                                      ),
-                              ),
-                              Positioned(
-                                bottom: 0,
-                                right: 0,
-                                child: IconButton.filled(
-                                  tooltip: 'Change profile photo',
-                                  onPressed: () {
-                                    // TODO: pick and upload a profile photo.
-                                  },
-                                  icon: const Icon(Icons.camera_alt_outlined),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                        _buildProfilePicture(scheme, profile, context),
                         const SizedBox(height: AppSpacing.sm),
                         Text(
                           ProfileState.display(profile?.displayName),
@@ -140,14 +98,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                             color: scheme.onPrimaryContainer,
                           ),
                         ),
-                        const SizedBox(height: AppSpacing.xs),
-                        Text(
-                          '${profileState.ageLabel(DateTime.now())} · ${ProfileState.display(profile?.gender)}',
-                          textAlign: TextAlign.center,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: scheme.onSurfaceVariant,
-                          ),
-                        ),
+
                         const SizedBox(height: AppSpacing.lg),
                         Card(
                           clipBehavior: Clip.antiAlias,
@@ -157,6 +108,14 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                                 icon: Icons.mail_outline_rounded,
                                 label: 'Email address',
                                 value: ProfileState.display(profile?.email),
+                              ),
+                              const Divider(),
+                              ProfileDetailRow(
+                                icon: Icons.phone_outlined,
+                                label: 'Phone number',
+                                value: ProfileState.display(
+                                  profile?.phoneNumber,
+                                ),
                               ),
                               const Divider(),
                               ProfileDetailRow(
@@ -176,14 +135,6 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                                 label: 'Blood group',
                                 value: ProfileState.display(
                                   profile?.bloodGroup,
-                                ),
-                              ),
-                              const Divider(),
-                              ProfileDetailRow(
-                                icon: Icons.language_rounded,
-                                label: 'Preferred language',
-                                value: ProfileState.display(
-                                  profile?.preferredLanguage,
                                 ),
                               ),
                             ],
@@ -214,6 +165,51 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Center _buildProfilePicture(
+    ColorScheme scheme,
+    UserProfile? profile,
+    BuildContext context,
+  ) {
+    return Center(
+      child: Stack(
+        children: [
+          CircleAvatar(
+            radius: 56,
+            backgroundColor: scheme.primaryContainer,
+            child: profile?.photoUrl == null
+                ? Icon(
+                    Icons.person_outline_rounded,
+                    size: 64,
+                    color: scheme.primary,
+                  )
+                : ClipOval(
+                    child: Image.network(
+                      profile!.photoUrl!,
+                      width: 112,
+                      height: 112,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, _, _) => Icon(
+                        Icons.person_outline_rounded,
+                        size: 64,
+                        color: scheme.primary,
+                      ),
+                    ),
+                  ),
+          ),
+          Positioned(
+            bottom: 0,
+            right: 0,
+            child: IconButton.filled(
+              tooltip: 'Change profile photo',
+              onPressed: () => _edit(context),
+              icon: const Icon(Icons.camera_alt_outlined),
+            ),
+          ),
+        ],
       ),
     );
   }

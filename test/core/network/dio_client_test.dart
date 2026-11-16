@@ -8,6 +8,70 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('401 refreshes and retries the profile request once', () async {
+    final adapter = _RecordingAdapter()..statusCode = 401;
+    var token = 'expired';
+    var refreshes = 0;
+    final client = createDioClient(
+      baseUrl: 'https://api.example.com',
+      readAccessToken: () async => token,
+      refreshAccessToken: () async {
+        refreshes++;
+        adapter.statusCode = 200;
+        return token = 'renewed';
+      },
+      adapter: adapter,
+    );
+    addTearDown(client.close);
+    await client.get<Object?>('/users/me');
+    expect(refreshes, 1);
+    expect(adapter.requests, hasLength(2));
+    expect(adapter.requests.last.headers['Authorization'], 'Bearer renewed');
+  });
+
+  test('rejected renewed token expires session without a retry loop', () async {
+    final adapter = _RecordingAdapter()..statusCode = 401;
+    var token = 'expired';
+    var ended = 0;
+    final client = createDioClient(
+      baseUrl: 'https://api.example.com',
+      readAccessToken: () async => token,
+      refreshAccessToken: () async => token = 'renewed',
+      onSessionExpired: () async {
+        ended++;
+      },
+      adapter: adapter,
+    );
+    addTearDown(client.close);
+    await expectLater(
+      client.get<Object?>('/users/me'),
+      throwsA(isA<DioException>()),
+    );
+    expect(ended, 1);
+    expect(adapter.requests, hasLength(2));
+  });
+
+  test('network failure during renewal preserves session', () async {
+    final adapter = _RecordingAdapter()..statusCode = 401;
+    var ended = 0;
+    final client = createDioClient(
+      baseUrl: 'https://api.example.com',
+      readAccessToken: () async => 'expired',
+      refreshAccessToken: () async => throw Exception('offline'),
+      onSessionExpired: () async {
+        ended++;
+      },
+      adapter: adapter,
+    );
+    addTearDown(client.close);
+    await expectLater(
+      client.get<Object?>('/users/me'),
+      throwsA(isA<DioException>()),
+    );
+    expect(ended, 0);
+    expect(adapter.requests, hasLength(1));
+  });
+
   late _RecordingAdapter adapter;
   late Dio dio;
   String? token;
@@ -189,6 +253,7 @@ void main() {
     () async {
       final container = ProviderContainer.test(
         overrides: [
+          apiSessionIdProvider.overrideWithValue(() => 'test-user'),
           apiBaseUrlProvider.overrideWithValue('https://api.example.com'),
           accessTokenReaderProvider.overrideWithValue(
             () async => 'provider-token',

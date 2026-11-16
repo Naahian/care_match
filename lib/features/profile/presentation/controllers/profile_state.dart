@@ -1,11 +1,19 @@
 import '../../domain/entities/user_profile.dart';
 
 class ProfileState {
-  const ProfileState({this.profile, this.isLoading = false, this.errorMessage});
+  const ProfileState({
+    this.profile,
+    this.isLoading = false,
+    this.isSaving = false,
+    this.errorMessage,
+    this.saveError,
+  });
 
   final UserProfile? profile;
   final bool isLoading;
+  final bool isSaving;
   final String? errorMessage;
+  final String? saveError;
 
   static String display(String? value) =>
       value == null || value.trim().isEmpty ? 'unknown' : value.trim();

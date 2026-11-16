@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/constants/constants.dart';
+import '../../../../core/localization/app_localizations.dart';
 
 class PreferenceThemeSelector extends StatelessWidget {
   const PreferenceThemeSelector({
@@ -15,6 +16,7 @@ class PreferenceThemeSelector extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    final l10n = AppLocalizations.of(context);
     return Container(
       decoration: BoxDecoration(
         color: scheme.surfaceContainer,
@@ -46,7 +48,7 @@ class PreferenceThemeSelector extends StatelessWidget {
                   textStyle: theme.textTheme.labelSmall,
                   tapTargetSize: MaterialTapTargetSize.padded,
                 ),
-                child: Text(entry.value),
+                child: Text(l10n.text(entry.value)),
               ),
             ),
         ],

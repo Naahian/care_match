@@ -5,6 +5,7 @@ import '../widgets/doctor_summary.dart';
 extension DoctorPresentation on Doctor {
   DoctorSummary get summary => DoctorSummary(
     name: name ?? 'Name not provided',
+    photoUrl: photoUrl,
     specialty: specialties.isEmpty
         ? 'Specialty not provided'
         : specialties.join(', '),
@@ -16,6 +17,17 @@ extension DoctorPresentation on Doctor {
 
   DoctorProfile get profile => DoctorProfile(
     id: id,
+    qualifications: degrees,
+    practiceLocation: clinics.isEmpty
+        ? null
+        : clinics
+              .map(
+                (c) => [
+                  c.name,
+                  c.location,
+                ].where((part) => part.trim().isNotEmpty).join(', '),
+              )
+              .join('\n'),
     daysAvailable: daysAvailable,
     timeAvailable: timeAvailable,
     summary: summary,

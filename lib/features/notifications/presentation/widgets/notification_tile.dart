@@ -1,88 +1,59 @@
 import 'package:flutter/material.dart';
 import '../../../../core/constants/constants.dart';
-import '../models/app_notification.dart';
+import '../../domain/app_notification.dart';
 
 class NotificationTile extends StatelessWidget {
   const NotificationTile({
     super.key,
     required this.notification,
     required this.isUnread,
-    this.onTap,
   });
-
   final AppNotification notification;
   final bool isUnread;
-  final VoidCallback? onTap;
-
+  IconData get icon => switch (notification.type) {
+    NotificationType.appointmentCreated => Icons.event_available_outlined,
+    NotificationType.appointmentCancelled => Icons.event_busy_outlined,
+    NotificationType.appointmentReminder => Icons.alarm_outlined,
+    NotificationType.appointmentCreationFailure => Icons.event_busy_outlined,
+    NotificationType.paymentFailure => Icons.payment_outlined,
+  };
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final isReport = notification.category == NotificationCategory.report;
-    return Semantics(
-      label: isUnread ? 'Unread notification' : 'Read notification',
-      child: ListTile(
-        onTap: onTap,
-        contentPadding: AppSpacing.card,
-        tileColor: isUnread
-            ? scheme.primaryContainer.withValues(alpha: 0.3)
-            : null,
-        leading: CircleAvatar(
-          backgroundColor: isReport
-              ? scheme.secondaryContainer
-              : scheme.primaryContainer,
-          foregroundColor: isReport ? scheme.secondary : scheme.primary,
-          child: Icon(notification.icon),
+    return ListTile(
+      contentPadding: AppSpacing.card,
+      tileColor: isUnread
+          ? scheme.primaryContainer.withValues(alpha: .28)
+          : null,
+      leading: CircleAvatar(
+        backgroundColor: scheme.primaryContainer,
+        foregroundColor: scheme.primary,
+        child: Icon(icon),
+      ),
+      title: Text(
+        notification.title,
+        style: theme.textTheme.titleSmall?.copyWith(
+          fontWeight: isUnread ? FontWeight.w700 : FontWeight.w600,
         ),
-        title: Text(
-          notification.title,
-          style: theme.textTheme.titleSmall?.copyWith(
-            color: scheme.onPrimaryContainer,
-            fontWeight: isUnread ? FontWeight.w700 : FontWeight.w600,
-          ),
-        ),
-        subtitle: Padding(
-          padding: const EdgeInsets.only(top: AppSpacing.xs),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                notification.message,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: scheme.onSurfaceVariant,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              Text(
-                notification.timeLabel,
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: scheme.onSurfaceVariant,
-                ),
-              ),
-            ],
-          ),
-        ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
+      ),
+      subtitle: Padding(
+        padding: const EdgeInsets.only(top: AppSpacing.xs),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (isUnread)
-              Container(
-                width: AppSpacing.sm,
-                height: AppSpacing.sm,
-                decoration: BoxDecoration(
-                  color: scheme.primary,
-                  shape: BoxShape.circle,
-                ),
-              ),
-            if (onTap != null)
-              Icon(
-                Icons.chevron_right_rounded,
-                color: scheme.primary,
-                size: 20,
-              ),
+            Text(notification.message),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              '${MaterialLocalizations.of(context).formatMediumDate(notification.createdAt.toLocal())} · ${TimeOfDay.fromDateTime(notification.createdAt.toLocal()).format(context)}',
+              style: theme.textTheme.labelSmall,
+            ),
           ],
         ),
       ),
+      trailing: isUnread
+          ? Icon(Icons.circle, size: 9, color: scheme.primary)
+          : null,
     );
   }
 }

@@ -1,9 +1,10 @@
 import '../../../doctors/domain/entities/doctor.dart';
 import '../../../doctors/domain/repositories/doctors_repository.dart';
 import '../entities/patient_appointment.dart';
+import '../entities/appointment.dart';
 import '../repositories/appointments_repository.dart';
 
-/// Loads the patient's records and enriches them with optional doctor details.
+/// Loads records for the viewing role, enriching patient views with doctors.
 /// An unavailable doctor directory must not hide existing appointments.
 class GetPatientAppointments {
   const GetPatientAppointments({
@@ -13,9 +14,20 @@ class GetPatientAppointments {
   final AppointmentsRepository appointmentsRepository;
   final DoctorsRepository doctorsRepository;
 
-  Future<PatientAppointments> call() async {
-    final appointments = await appointmentsRepository.getAppointments();
+  Future<PatientAppointments> call({
+    AppointmentRole role = AppointmentRole.patient,
+  }) async {
+    final appointments = await appointmentsRepository.getAppointments(
+      role: role,
+    );
     if (appointments.isEmpty) return PatientAppointments(appointments: []);
+    if (role == AppointmentRole.doctor) {
+      return PatientAppointments(
+        appointments: appointments
+            .map((appointment) => PatientAppointment(appointment: appointment))
+            .toList(),
+      );
+    }
     final doctors = <String, Doctor>{};
     try {
       for (final doctor in await doctorsRepository.getDoctors()) {

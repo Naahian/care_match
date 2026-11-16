@@ -12,11 +12,15 @@ class DoctorProfile {
     this.videoPrice = AppConstants.defaultConsultationPrice,
     this.inPersonPrice = AppConstants.defaultConsultationPrice,
     this.id,
+    this.qualifications = const [],
+    this.practiceLocation,
     this.daysAvailable = const [],
     this.timeAvailable = const [],
   });
   final DoctorSummary summary;
   final String biography;
+  final List<String> qualifications;
+  final String? practiceLocation;
   final String hospital;
   final List<String> careAreas;
   final String chatPrice;

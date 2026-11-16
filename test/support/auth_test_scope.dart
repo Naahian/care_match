@@ -9,6 +9,9 @@ import 'package:care_match/features/auth/domain/entities/doctor_registration_det
 import 'package:care_match/features/auth/domain/repositories/auth_repository.dart';
 import 'package:care_match/features/auth/providers.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:care_match/features/profile/providers.dart';
+import 'package:care_match/features/profile/domain/repositories/profile_repository.dart';
+import 'package:care_match/features/profile/domain/entities/user_profile.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -18,6 +21,7 @@ Widget authTestScope(
   DoctorsRepository? doctorsRepository,
 }) => ProviderScope(
   overrides: [
+    profileRepositoryProvider.overrideWithValue(_ProfileRepository()),
     if (doctorsRepository != null)
       doctorsRepositoryProvider.overrideWithValue(doctorsRepository),
     authRepositoryProvider.overrideWithValue(
@@ -27,6 +31,17 @@ Widget authTestScope(
   ],
   child: child,
 );
+
+class _ProfileRepository implements ProfileRepository {
+  @override
+  Future<UserProfile> getProfile() async => const UserProfile();
+
+  @override
+  Future<UserProfile> updateProfile(ProfileUpdate update) async => UserProfile(
+    displayName: update.displayName,
+    phoneNumber: update.phoneNumber,
+  );
+}
 
 class FakeAuthRepository implements AuthRepository {
   @override

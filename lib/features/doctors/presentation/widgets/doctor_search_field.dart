@@ -18,7 +18,7 @@ class DoctorSearchField extends StatelessWidget {
     final scheme = theme.colorScheme;
 
     const pillBorder = OutlineInputBorder(
-      borderRadius: AppRadius.chip,
+      borderRadius: AppRadius.card,
       borderSide: BorderSide.none,
     );
 
@@ -40,11 +40,21 @@ class DoctorSearchField extends StatelessWidget {
         focusedBorder: pillBorder.copyWith(
           borderSide: BorderSide(color: scheme.primary, width: 1.5),
         ),
-        prefixIcon: Icon(Icons.search_rounded, color: scheme.primary),
-        suffixIcon: IconButton(
-          tooltip: 'Search doctors',
-          onPressed: onSubmit,
-          icon: const Icon(Icons.arrow_forward_rounded),
+        prefixIcon: Icon(Icons.search_rounded, color: scheme.onSurfaceVariant),
+        suffixIcon: Padding(
+          padding: const EdgeInsets.all(AppSpacing.xs),
+          child: IconButton.filled(
+            tooltip: 'Search doctors',
+            onPressed: onSubmit,
+            style: IconButton.styleFrom(
+              backgroundColor: scheme.primaryContainer,
+              foregroundColor: scheme.primary,
+              shape: const RoundedRectangleBorder(
+                borderRadius: AppRadius.button,
+              ),
+            ),
+            icon: const Icon(Icons.arrow_forward_rounded),
+          ),
         ),
       ),
     );

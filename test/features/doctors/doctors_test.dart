@@ -59,6 +59,7 @@ void main() {
           {
             'uid': ' firebase-id ',
             'display_name': ' API Doctor ',
+            'photo_url': 'https://example.com/doctor.jpg?v=2',
             'specialties': [' Cardiology '],
             'degrees': ['MD'],
             'clinics': [
@@ -76,6 +77,9 @@ void main() {
         expect(adapter.request!.headers['Authorization'], 'Bearer token');
         final doctor = result.single;
         expect(doctor.id, 'firebase-id');
+        expect(doctor.photoUrl, 'https://example.com/doctor.jpg?v=2');
+        expect(doctor.summary.photoUrl, doctor.photoUrl);
+        expect(doctor.profile.summary.photoUrl, doctor.photoUrl);
         expect(doctor.verified, isTrue);
         expect(doctor.profile.routeId, 'firebase-id');
         expect(doctor.profile.biography, contains('MD'));

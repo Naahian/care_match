@@ -1,4 +1,5 @@
 import 'package:care_match/core/constants/app_routes.dart';
+import 'package:care_match/core/localization/app_localizations.dart';
 import 'package:go_router/go_router.dart';
 import 'package:care_match/core/constants/constants.dart';
 import 'package:care_match/shared/widgets/bottom_navbar.dart';
@@ -26,7 +27,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void initState() {
     super.initState();
     Future.microtask(() {
-      if (mounted) ref.read(homeControllerProvider.notifier).loadDoctors();
+      if (mounted) {
+        ref.read(homeControllerProvider.notifier).loadDoctors(refresh: true);
+      }
     });
   }
 
@@ -48,6 +51,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final home = ref.watch(homeControllerProvider);
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       body: SafeArea(
         child: Center(
@@ -60,9 +64,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.lg,
                   AppSpacing.md,
-                  AppSpacing.md,
-                  AppSpacing.md,
+                  AppSpacing.lg,
                   AppSpacing.lg,
                 ),
                 children: [
@@ -73,21 +77,31 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           alignment: Alignment.centerLeft,
                           child: FittedBox(
                             fit: BoxFit.scaleDown,
-                            child: BrandHeader(),
+                            child: BrandHeader(compact: true),
                           ),
                         ),
                       ),
                       const SizedBox(width: AppSpacing.sm),
-                      IconButton(
-                        tooltip: 'Settings',
-                        color: Theme.of(context).colorScheme.primary,
-                        icon: const Icon(Icons.settings_outlined),
-                        onPressed: () =>
-                            context.pushNamed(AppRoutes.preferences),
+                      Tooltip(
+                        message: l10n.text('Settings'),
+                        child: Material(
+                          color: Theme.of(context).colorScheme.surface,
+                          borderRadius: AppRadius.card,
+                          child: InkWell(
+                            borderRadius: AppRadius.card,
+                            onTap: () =>
+                                context.pushNamed(AppRoutes.preferences),
+                            child: const SizedBox(
+                              width: 44,
+                              height: 44,
+                              child: Icon(Icons.tune_rounded),
+                            ),
+                          ),
+                        ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: AppSpacing.md),
+                  const SizedBox(height: AppSpacing.lg),
                   SymptomCard(
                     controller: _searchController,
                     onSubmit: _submitSearch,

@@ -1,3 +1,4 @@
+import 'package:care_match/shared/widgets/care_app_bar.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -11,6 +12,8 @@ import '../controllers/appointments_controller.dart';
 import '../controllers/appointments_state.dart';
 import '../widgets/appointment_card_shimmer.dart';
 import '../widgets/patient_appointment_card.dart';
+import '../../domain/entities/appointment.dart';
+import '../../../consultation/presentation/widgets/upcoming_consultation.dart';
 
 class MyAppointmentsScreen extends ConsumerStatefulWidget {
   const MyAppointmentsScreen({super.key, this.refreshOnOpen = false});
@@ -42,9 +45,7 @@ class _MyAppointmentsScreenState extends ConsumerState<MyAppointmentsScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Cancel appointment?'),
-        content: const Text(
-          'This will cancel your appointment with the doctor.',
-        ),
+        content: const Text('This will cancel the appointment.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -64,6 +65,31 @@ class _MyAppointmentsScreenState extends ConsumerState<MyAppointmentsScreen> {
     }
   }
 
+  Future<void> _complete(String id) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Complete appointment?'),
+        content: const Text('This will mark the appointment as completed.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Keep appointment'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Mark as completed'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true && mounted) {
+      await ref
+          .read(appointmentsControllerProvider.notifier)
+          .completeAppointment(id);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(appointmentsControllerProvider);
@@ -71,8 +97,9 @@ class _MyAppointmentsScreenState extends ConsumerState<MyAppointmentsScreen> {
     final appointments = state.visibleAppointments;
     final busy = state.isLoading || state.updatingIds.isNotEmpty;
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('My Appointments'),
+      appBar: careAppBar(
+        context,
+        title: const Text('My care'),
         actions: [
           IconButton(
             tooltip: 'Refresh appointments',
@@ -84,7 +111,7 @@ class _MyAppointmentsScreenState extends ConsumerState<MyAppointmentsScreen> {
       bottomNavigationBar: SafeArea(
         top: false,
         child: Padding(
-          padding: AppSpacing.page,
+          padding: const EdgeInsets.all(AppSpacing.lg),
           child: Center(
             heightFactor: 1,
             child: ConstrainedBox(
@@ -95,6 +122,13 @@ class _MyAppointmentsScreenState extends ConsumerState<MyAppointmentsScreen> {
                   onPressed: () => context.goNamed(AppRoutes.home),
                   icon: const Icon(Icons.home_outlined),
                   label: const Text('Back to Home'),
+                  style: OutlinedButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.surface,
+                    minimumSize: const Size(0, 56),
+                    shape: const RoundedRectangleBorder(
+                      borderRadius: AppRadius.card,
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -111,27 +145,84 @@ class _MyAppointmentsScreenState extends ConsumerState<MyAppointmentsScreen> {
                 physics: const AlwaysScrollableScrollPhysics(),
                 slivers: [
                   SliverPadding(
-                    padding: AppSpacing.page,
+                    padding: const EdgeInsets.all(AppSpacing.lg),
                     sliver: SliverToBoxAdapter(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Wrap(
-                            spacing: AppSpacing.sm,
-                            runSpacing: AppSpacing.sm,
-                            children: [
-                              for (final filter in AppointmentsFilter.values)
-                                ChoiceChip(
-                                  label: Text(switch (filter) {
-                                    AppointmentsFilter.upcoming => 'Upcoming',
-                                    AppointmentsFilter.completed => 'Completed',
-                                    AppointmentsFilter.cancelled => 'Cancelled',
-                                  }),
-                                  selected: state.filter == filter,
-                                  onSelected: (_) =>
-                                      controller.selectFilter(filter),
+                          Text(
+                            'My appointments',
+                            style: Theme.of(context).textTheme.headlineLarge,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Manage your upcoming care.',
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
                                 ),
-                            ],
+                          ),
+                          const SizedBox(height: 24),
+                          DecoratedBox(
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.surface,
+                              borderRadius: AppRadius.card,
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 4,
+                              ),
+                              child: Row(
+                                children: [
+                                  for (final filter
+                                      in AppointmentsFilter.values)
+                                    Expanded(
+                                      child: ChoiceChip(
+                                        showCheckmark: false,
+                                        side: BorderSide.none,
+                                        labelPadding: EdgeInsets.zero,
+                                        padding: EdgeInsets.zero,
+                                        shape: const RoundedRectangleBorder(
+                                          borderRadius: AppRadius.button,
+                                        ),
+                                        backgroundColor: Theme.of(
+                                          context,
+                                        ).colorScheme.surface,
+                                        selectedColor: Theme.of(
+                                          context,
+                                        ).colorScheme.primary,
+                                        labelStyle: Theme.of(context)
+                                            .textTheme
+                                            .labelSmall
+                                            ?.copyWith(
+                                              color: state.filter == filter
+                                                  ? Theme.of(
+                                                      context,
+                                                    ).colorScheme.onPrimary
+                                                  : Theme.of(context)
+                                                        .colorScheme
+                                                        .onSurfaceVariant,
+                                            ),
+                                        label: Center(
+                                          child: Text(switch (filter) {
+                                            AppointmentsFilter.upcoming =>
+                                              'Upcoming',
+                                            AppointmentsFilter.completed =>
+                                              'Completed',
+                                            AppointmentsFilter.cancelled =>
+                                              'Cancelled',
+                                          }, textAlign: TextAlign.center),
+                                        ),
+                                        selected: state.filter == filter,
+                                        onSelected: (_) =>
+                                            controller.selectFilter(filter),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
                           ),
                           const SizedBox(height: AppSpacing.md),
                           if (state.isLoading)
@@ -180,9 +271,9 @@ class _MyAppointmentsScreenState extends ConsumerState<MyAppointmentsScreen> {
                   if (!state.isLoading && appointments.isNotEmpty)
                     SliverPadding(
                       padding: const EdgeInsets.fromLTRB(
-                        AppSpacing.md,
+                        AppSpacing.lg,
                         0,
-                        AppSpacing.md,
+                        AppSpacing.lg,
                         AppSpacing.md,
                       ),
                       sliver: SliverList.separated(
@@ -194,17 +285,68 @@ class _MyAppointmentsScreenState extends ConsumerState<MyAppointmentsScreen> {
                           return PatientAppointmentCard(
                             key: ValueKey(entry.appointment.id),
                             appointment: entry,
+                            role: state.role,
                             isUpdating: state.updatingIds.contains(
                               entry.appointment.id,
                             ),
                             errorMessage:
                                 state.updateErrors[entry.appointment.id],
+                            onComplete:
+                                state.uncertainIds.contains(
+                                  entry.appointment.id,
+                                )
+                                ? null
+                                : () => _complete(entry.appointment.id),
+                            onOpenChat: () => context.pushNamed(
+                              AppRoutes.chat,
+                              queryParameters: {
+                                'recipient':
+                                    state.role == AppointmentRole.doctor
+                                    ? entry.appointment.patientId
+                                    : entry.appointment.doctorId,
+                              },
+                            ),
                             onCancel:
                                 state.uncertainIds.contains(
                                   entry.appointment.id,
                                 )
                                 ? null
                                 : () => _cancel(entry.appointment.id),
+                            onJoinVideo: () {
+                              final date = entry.appointment.scheduledFor
+                                  .toLocal();
+                              final localizations = MaterialLocalizations.of(
+                                context,
+                              );
+                              context.pushNamed(
+                                AppRoutes.video,
+                                queryParameters: {
+                                  'appointmentId': entry.appointment.id,
+                                },
+                                extra: UpcomingConsultation(
+                                  doctorName:
+                                      (state.role == AppointmentRole.doctor
+                                          ? entry.appointment.patientName ??
+                                                entry
+                                                    .appointment
+                                                    .patient
+                                                    ?.name ??
+                                                'Patient'
+                                          : entry.doctor?.name) ??
+                                      'Doctor details unavailable',
+                                  specialty:
+                                      (state.role == AppointmentRole.doctor
+                                          ? 'Patient consultation'
+                                          : entry.doctor?.specialties.join(
+                                              ', ',
+                                            )) ??
+                                      'Specialty not provided',
+                                  schedule:
+                                      '${localizations.formatMediumDate(date)} · '
+                                      '${localizations.formatTimeOfDay(TimeOfDay.fromDateTime(date))}',
+                                ),
+                              );
+                            },
                           );
                         },
                       ),

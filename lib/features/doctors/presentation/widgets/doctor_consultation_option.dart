@@ -28,8 +28,13 @@ class DoctorConsultationOption extends StatelessWidget {
           padding: AppSpacing.card,
           child: Row(
             children: [
-              CircleAvatar(
-                backgroundColor: scheme.primaryContainer,
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: scheme.primaryContainer,
+                  borderRadius: AppRadius.card,
+                ),
                 child: Icon(icon, color: scheme.primary),
               ),
               const SizedBox(width: AppSpacing.md),
@@ -37,24 +42,7 @@ class DoctorConsultationOption extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Wrap(
-                      alignment: WrapAlignment.spaceBetween,
-                      spacing: AppSpacing.sm,
-                      children: [
-                        Text(
-                          title,
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            color: scheme.onPrimaryContainer,
-                          ),
-                        ),
-                        Text(
-                          price,
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            color: scheme.primary,
-                          ),
-                        ),
-                      ],
-                    ),
+                    Text(title, style: theme.textTheme.titleSmall),
                     const SizedBox(height: AppSpacing.xs),
                     Text(
                       description,
@@ -66,7 +54,15 @@ class DoctorConsultationOption extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: AppSpacing.xs),
-              Icon(Icons.chevron_right_rounded, color: scheme.primary),
+              Expanded(
+                child: Text(
+                  price,
+                  textAlign: TextAlign.end,
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    color: scheme.primary,
+                  ),
+                ),
+              ),
             ],
           ),
         ),

@@ -19,11 +19,13 @@ class PageDots extends StatelessWidget {
         return AnimatedContainer(
           duration: AppConstants.animationDuration,
           margin: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
-          width: AppSpacing.sm,
+          width: active ? 26 : AppSpacing.sm,
           height: AppSpacing.sm,
           decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: active ? scheme.primary : scheme.outlineVariant,
+            borderRadius: AppRadius.chip,
+            color: active
+                ? scheme.primary
+                : scheme.outline.withValues(alpha: .65),
           ),
         );
       }),

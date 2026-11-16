@@ -6,7 +6,7 @@ import 'illustration_slot.dart';
 import 'quick_action.dart';
 import 'scrollable_fill.dart';
 
-/// Page 4: illustration on top, centered text, quick-action shortcuts.
+/// Final page with centered copy, existing artwork and care feature tiles.
 class FinalPage extends StatelessWidget {
   const FinalPage({super.key});
 
@@ -21,16 +21,11 @@ class FinalPage extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
         child: Column(
           children: [
-            const Expanded(
-              flex: 4,
-              child: IllustrationSlot(
-                imageAsset: 'assets/images/welcome_4.png',
-              ),
-            ),
+            const SizedBox(height: AppSpacing.lg),
             Text(
-              'Better care starts here',
+              'Better care\nstarts here',
               textAlign: TextAlign.center,
-              style: theme.textTheme.headlineMedium?.copyWith(
+              style: theme.textTheme.headlineLarge?.copyWith(
                 color: scheme.onPrimaryContainer,
               ),
             ),
@@ -44,44 +39,56 @@ class FinalPage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: AppSpacing.lg),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: QuickAction(
-                    icon: Icons.medical_services_outlined,
-                    label: 'Find a Doctor',
-                    background: scheme.primaryContainer,
-                    foreground: scheme.primary,
-                  ),
-                ),
-                Expanded(
-                  child: QuickAction(
-                    icon: Icons.chat_bubble_outline_rounded,
-                    label: 'Chat Consult',
-                    background: scheme.secondaryContainer,
-                    foreground: scheme.onSecondaryContainer,
-                  ),
-                ),
-                Expanded(
-                  child: QuickAction(
-                    icon: Icons.videocam_outlined,
-                    label: 'Video Consult',
-                    background: scheme.tertiaryContainer,
-                    foreground: scheme.onTertiaryContainer,
-                  ),
-                ),
-                Expanded(
-                  child: QuickAction(
-                    icon: Icons.description_outlined,
-                    label: 'My Care',
-                    background: extras.warningContainer,
-                    foreground: extras.warning,
-                  ),
-                ),
-              ],
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 12),
+              child: IllustrationSlot(
+                imageAsset: 'assets/images/welcome_4.png',
+              ),
             ),
-            Expanded(flex: 1, child: const SizedBox(height: AppSpacing.lg)),
+            const SizedBox(height: AppSpacing.lg),
+            IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(
+                    child: QuickAction(
+                      icon: Icons.medical_services_outlined,
+                      label: 'Find a\ndoctor',
+                      background: scheme.primaryContainer,
+                      foreground: scheme.primary,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: QuickAction(
+                      icon: Icons.chat_bubble_outline_rounded,
+                      label: 'Chat\nconsult',
+                      background: scheme.secondaryContainer,
+                      foreground: scheme.onSecondaryContainer,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: QuickAction(
+                      icon: Icons.videocam_outlined,
+                      label: 'Video\nconsult',
+                      background: scheme.tertiaryContainer,
+                      foreground: scheme.onTertiaryContainer,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: QuickAction(
+                      icon: Icons.description_outlined,
+                      label: 'My\ncare',
+                      background: extras.warningContainer,
+                      foreground: extras.warning,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
           ],
         ),
       ),

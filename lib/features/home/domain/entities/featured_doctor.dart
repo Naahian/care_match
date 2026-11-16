@@ -2,6 +2,7 @@ class FeaturedDoctor {
   const FeaturedDoctor({
     required this.id,
     this.name,
+    this.photoUrl,
     this.specialties = const [],
     this.availability,
     this.degrees = const [],
@@ -13,6 +14,7 @@ class FeaturedDoctor {
 
   final String id;
   final String? name;
+  final String? photoUrl;
   final List<String> specialties;
   final String? availability;
   final List<String> degrees;

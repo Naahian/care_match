@@ -4,6 +4,7 @@ class FeaturedDoctorModel extends FeaturedDoctor {
   const FeaturedDoctorModel({
     required super.id,
     super.name,
+    super.photoUrl,
     super.specialties,
     super.availability,
     super.degrees,
@@ -45,6 +46,7 @@ class FeaturedDoctorModel extends FeaturedDoctor {
     return FeaturedDoctorModel(
       id: id,
       name: text(json['display_name']),
+      photoUrl: text(json['photo_url']),
       specialties: list('specialties', requiredText),
       degrees: list('degrees', requiredText),
       daysAvailable: list('days_available', requiredText),

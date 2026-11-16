@@ -130,6 +130,27 @@ abstract final class AppTheme {
           ),
         ),
       ),
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: p.surface,
+        indicatorColor: p.primaryContainer,
+        iconTheme: WidgetStateProperty.resolveWith(
+          (states) => IconThemeData(
+            color: states.contains(WidgetState.selected)
+                ? p.primary
+                : p.onSurfaceVariant,
+          ),
+        ),
+        labelTextStyle: WidgetStateProperty.resolveWith(
+          (states) => TextStyle(
+            color: states.contains(WidgetState.selected)
+                ? p.primary
+                : p.onSurfaceVariant,
+            fontWeight: states.contains(WidgetState.selected)
+                ? FontWeight.w600
+                : FontWeight.w500,
+          ),
+        ),
+      ),
       extensions: [AppExtras.forBrightness(p.brightness)],
     );
   }

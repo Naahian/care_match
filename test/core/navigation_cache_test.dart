@@ -40,6 +40,9 @@ void main() {
         final repository = _Repository();
         final container = ProviderContainer.test(
           overrides: [
+            appointmentRoleProvider.overrideWith(
+              (ref) async => AppointmentRole.patient,
+            ),
             appointmentsRepositoryProvider.overrideWithValue(repository),
             doctorsRepositoryProvider.overrideWithValue(repository),
             homeRepositoryProvider.overrideWithValue(repository),
@@ -103,6 +106,9 @@ void main() {
       final repository = _Repository();
       final container = ProviderContainer.test(
         overrides: [
+          appointmentRoleProvider.overrideWith(
+            (ref) async => AppointmentRole.patient,
+          ),
           appointmentsRepositoryProvider.overrideWithValue(repository),
           doctorsRepositoryProvider.overrideWithValue(repository),
           profileRepositoryProvider.overrideWithValue(repository),
@@ -138,45 +144,42 @@ void main() {
     },
   );
 
-  testWidgets(
-    'Find a Doctor reuses cached results on reentry and refreshes on swipe',
-    (tester) async {
-      final repository = _Repository();
-      final visible = ValueNotifier(true);
-      addTearDown(visible.dispose);
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [doctorsRepositoryProvider.overrideWithValue(repository)],
-          child: Sizer(
-            builder: (_, _, _) => MaterialApp(
-              theme: AppTheme.light,
-              home: ValueListenableBuilder<bool>(
-                valueListenable: visible,
-                builder: (_, show, _) =>
-                    show ? const FindDoctorScreen() : const SizedBox(),
-              ),
+  testWidgets('Find a Doctor refreshes on reentry and swipe', (tester) async {
+    final repository = _Repository();
+    final visible = ValueNotifier(true);
+    addTearDown(visible.dispose);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [doctorsRepositoryProvider.overrideWithValue(repository)],
+        child: Sizer(
+          builder: (_, _, _) => MaterialApp(
+            theme: AppTheme.light,
+            home: ValueListenableBuilder<bool>(
+              valueListenable: visible,
+              builder: (_, show, _) =>
+                  show ? const FindDoctorScreen() : const SizedBox(),
             ),
           ),
         ),
-      );
-      await tester.pumpAndSettle();
-      expect(repository.calls['doctors'], 1);
-      visible.value = false;
-      await tester.pumpAndSettle();
-      visible.value = true;
-      await tester.pumpAndSettle();
-      expect(repository.calls['doctors'], 1);
-      await tester.drag(find.byType(CustomScrollView), const Offset(0, 400));
-      await tester.pumpAndSettle();
-      expect(repository.calls['doctors'], 2);
-      expect(find.text('Doctor 2'), findsOneWidget);
-      repository.failDoctors = true;
-      await tester.drag(find.byType(CustomScrollView), const Offset(0, 400));
-      await tester.pumpAndSettle();
-      expect(find.text('Refresh failed'), findsOneWidget);
-      expect(find.text('Doctor 2'), findsOneWidget);
-    },
-  );
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(repository.calls['doctors'], 1);
+    visible.value = false;
+    await tester.pumpAndSettle();
+    visible.value = true;
+    await tester.pumpAndSettle();
+    expect(repository.calls['doctors'], 2);
+    await tester.drag(find.byType(CustomScrollView), const Offset(0, 400));
+    await tester.pumpAndSettle();
+    expect(repository.calls['doctors'], 3);
+    expect(find.text('Doctor 3'), findsOneWidget);
+    repository.failDoctors = true;
+    await tester.drag(find.byType(CustomScrollView), const Offset(0, 400));
+    await tester.pumpAndSettle();
+    expect(find.text('Refresh failed'), findsOneWidget);
+    expect(find.text('Doctor 3'), findsOneWidget);
+  });
 
   test('a failed refresh retains the last successful doctor result', () async {
     final repository = _Repository();
@@ -221,7 +224,9 @@ class _Repository
   }
 
   @override
-  Future<List<Appointment>> getAppointments() async {
+  Future<List<Appointment>> getAppointments({
+    AppointmentRole role = AppointmentRole.patient,
+  }) async {
     _count('appointments');
     return [];
   }
@@ -231,6 +236,10 @@ class _Repository
     _count('profile');
     return UserProfile(displayName: 'Patient ${calls['profile']}');
   }
+
+  @override
+  Future<UserProfile> updateProfile(ProfileUpdate update) =>
+      throw UnimplementedError();
 
   @override
   Future<Appointment> updateStatus({

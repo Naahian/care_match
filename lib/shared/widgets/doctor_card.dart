@@ -12,6 +12,8 @@ class DoctorCard extends StatelessWidget {
     required this.highlightAlt,
     this.onTap,
     this.price,
+    this.directoryStyle = false,
+    this.featured = false,
   });
 
   final DoctorSummary doctor;
@@ -20,6 +22,8 @@ class DoctorCard extends StatelessWidget {
   final bool highlightAlt;
   final VoidCallback? onTap;
   final String? price;
+  final bool directoryStyle;
+  final bool featured;
 
   @override
   Widget build(BuildContext context) {
@@ -27,80 +31,130 @@ class DoctorCard extends StatelessWidget {
     final scheme = theme.colorScheme;
 
     final chipBackground = highlightAlt
-        ? scheme.tertiaryContainer
+        ? (directoryStyle ? scheme.errorContainer : scheme.tertiaryContainer)
         : scheme.secondaryContainer;
     final chipForeground = highlightAlt
-        ? scheme.onTertiaryContainer
+        ? (directoryStyle
+              ? scheme.onErrorContainer
+              : scheme.onTertiaryContainer)
         : scheme.onSecondaryContainer;
 
+    final useSpecialtyIcon =
+        (directoryStyle || featured) &&
+        (doctor.photoUrl?.trim().isEmpty ?? true);
     return Card(
+      shape: directoryStyle || featured
+          ? const RoundedRectangleBorder(borderRadius: AppRadius.sheet)
+          : null,
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: AppSpacing.card,
-          child: Row(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          child: Column(
             children: [
-              DoctorAvatar(doctorName: doctor.name, radius: 36),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      doctor.name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        color: scheme.onPrimaryContainer,
+              Row(
+                children: [
+                  if (useSpecialtyIcon)
+                    Container(
+                      width: 52,
+                      height: 52,
+                      decoration: BoxDecoration(
+                        color: featured
+                            ? (highlightAlt
+                                  ? Color.alphaBlend(
+                                      scheme.primary.withValues(alpha: .13),
+                                      scheme.surface,
+                                    )
+                                  : scheme.primaryContainer)
+                            : chipBackground,
+                        borderRadius: AppRadius.card,
                       ),
-                    ),
-                    const SizedBox(height: AppSpacing.xs),
-                    Text(
-                      doctor.specialty,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: scheme.onSurfaceVariant,
+                      child: Icon(
+                        highlightAlt
+                            ? Icons.water_drop_outlined
+                            : Icons.medical_services_outlined,
+                        color: featured ? scheme.primary : chipForeground,
                       ),
+                    )
+                  else
+                    DoctorAvatar(
+                      doctorName: doctor.name,
+                      photoUrl: doctor.photoUrl,
+                      radius: 26,
                     ),
-                    const SizedBox(height: AppSpacing.sm),
-                    Wrap(
-                      alignment: WrapAlignment.spaceBetween,
-                      spacing: AppSpacing.sm,
-                      runSpacing: AppSpacing.xs,
-                      crossAxisAlignment: WrapCrossAlignment.center,
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: AppSpacing.sm + AppSpacing.xs,
-                            vertical: AppSpacing.xs + 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: chipBackground,
-                            borderRadius: BorderRadius.circular(AppRadius.sm),
-                          ),
-                          child: Text(
-                            doctor.availability,
-                            style: theme.textTheme.labelMedium?.copyWith(
-                              color: chipForeground,
-                            ),
+                        Text(
+                          doctor.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            color: scheme.onPrimaryContainer,
                           ),
                         ),
-                        if (price != null)
+                        const SizedBox(height: AppSpacing.xs),
+                        Text(
+                          doctor.specialty,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: scheme.onSurfaceVariant,
+                          ),
+                        ),
+                        if (featured) ...[
+                          const SizedBox(height: 4),
                           Text(
-                            price!,
-                            style: theme.textTheme.titleSmall?.copyWith(
+                            doctor.availability,
+                            style: theme.textTheme.labelSmall?.copyWith(
                               color: scheme.primary,
                             ),
                           ),
+                        ],
                       ],
                     ),
-                  ],
-                ),
+                  ),
+                  if (onTap != null)
+                    Icon(Icons.chevron_right_rounded, color: scheme.outline),
+                ],
               ),
-              if (onTap != null)
-                Icon(Icons.chevron_right_rounded, color: scheme.outline),
+              if (!featured) const SizedBox(height: AppSpacing.sm),
+              if (!featured)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.sm,
+                    vertical: AppSpacing.xs + 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: chipBackground,
+                    borderRadius: BorderRadius.circular(AppRadius.sm),
+                  ),
+                  child: Text(
+                    directoryStyle &&
+                            !doctor.availability.toLowerCase().startsWith(
+                              'availab',
+                            )
+                        ? 'Available: ${doctor.availability}'
+                        : doctor.availability,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: chipForeground,
+                    ),
+                  ),
+                ),
+              if (price != null)
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: Text(
+                    price!,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      color: scheme.primary,
+                    ),
+                  ),
+                ),
             ],
           ),
         ),

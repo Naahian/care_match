@@ -2,9 +2,11 @@ import 'package:care_match/router.dart';
 import 'package:go_router/go_router.dart';
 import 'package:care_match/core/theme/theme.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sizer/sizer.dart';
 import 'features/settings/preferences_controller.dart';
+import 'core/localization/app_localizations.dart';
 import 'core/services/snackbar_service.dart';
 import 'core/services/storage_service.dart';
 import 'bootstrap.dart';
@@ -44,6 +46,14 @@ class MyApp extends StatelessWidget {
       listenable: appPreferences,
       builder: (context, _) => MaterialApp.router(
         title: 'Care Match',
+        locale: appPreferences.locale,
+        supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
         scaffoldMessengerKey: snackbar.messengerKey,
         theme: AppTheme.light,
         darkTheme: AppTheme.dark,

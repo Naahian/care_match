@@ -7,12 +7,18 @@ class ChatIllustrationSlot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Image.asset(
-      'assets/images/chat_feature.png',
-      width: double.infinity,
-      height: 16.h.clamp(120.0, 240.0),
-      fit: BoxFit.contain,
-      excludeFromSemantics: true,
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(24),
+      child: ColoredBox(
+        color: Theme.of(context).colorScheme.primaryContainer,
+        child: Image.asset(
+          'assets/images/chat_feature.png',
+          width: double.infinity,
+          height: 16.h.clamp(120.0, 240.0),
+          fit: BoxFit.contain,
+          excludeFromSemantics: true,
+        ),
+      ),
     );
   }
 }

@@ -7,25 +7,33 @@ class AuthPrimaryButton extends StatelessWidget {
     required this.label,
     required this.onPressed,
     this.isLoading = false,
+    this.roundedRectangle = false,
   });
   final String label;
   final VoidCallback? onPressed;
   final bool isLoading;
+  final bool roundedRectangle;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final radius = roundedRectangle ? AppRadius.card : AppRadius.chip;
     return DecoratedBox(
       decoration: BoxDecoration(
-        borderRadius: AppRadius.chip,
-        gradient: LinearGradient(colors: [scheme.tertiary, scheme.primary]),
+        borderRadius: radius,
+        gradient: roundedRectangle
+            ? null
+            : LinearGradient(colors: [scheme.tertiary, scheme.primary]),
       ),
       child: FilledButton(
         style: FilledButton.styleFrom(
-          backgroundColor: Colors.transparent,
+          backgroundColor: roundedRectangle
+              ? scheme.primary
+              : Colors.transparent,
           disabledBackgroundColor: scheme.surfaceContainerHighest,
+          minimumSize: const Size(0, 52),
           foregroundColor: scheme.onPrimary,
-          shape: const RoundedRectangleBorder(borderRadius: AppRadius.chip),
+          shape: RoundedRectangleBorder(borderRadius: radius),
           padding: const EdgeInsets.all(AppSpacing.md),
         ),
         onPressed: isLoading ? null : onPressed,

@@ -1,104 +1,70 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/constants.dart';
 import '../../../../shared/widgets/bottom_navbar.dart';
-import '../models/app_notification.dart';
+import '../../providers.dart';
 import '../widgets/notification_tile.dart';
 
-class NotificationsScreen extends StatefulWidget {
+class NotificationsScreen extends ConsumerStatefulWidget {
   const NotificationsScreen({super.key});
-
   @override
-  State<NotificationsScreen> createState() => _NotificationsScreenState();
+  ConsumerState<NotificationsScreen> createState() =>
+      _NotificationsScreenState();
 }
 
-class _NotificationsScreenState extends State<NotificationsScreen> {
-  final Set<String> _readIds = {};
+class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
+  @override
+  void initState() {
+    super.initState();
+    scheduleMicrotask(() async {
+      if (!mounted) return;
+      final controller = ref.read(notificationsControllerProvider.notifier);
+      await controller.load();
+      if (mounted) await controller.markAllSeen();
+    });
+  }
 
-  bool _isUnread(AppNotification notification) =>
-      notification.isUnread && !_readIds.contains(notification.id);
-
-  void _openNotification(AppNotification notification) {
-    final route = notification.routeName;
-    if (route == null) return;
-    setState(() => _readIds.add(notification.id));
-    context.pushNamed(route);
+  @override
+  void dispose() {
+    ref.read(notificationsControllerProvider.notifier).markAllSeen();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final state = ref.watch(notificationsControllerProvider);
+    final controller = ref.read(notificationsControllerProvider.notifier);
     final theme = Theme.of(context);
-    final unreadCount = sampleNotifications.where(_isUnread).length;
     return Scaffold(
       appBar: AppBar(
-        centerTitle: true,
-        title: Text(
-          'Notifications',
-          style: theme.textTheme.titleLarge?.copyWith(
-            color: theme.colorScheme.onPrimaryContainer,
-          ),
-        ),
+        title: Text('Notifications', style: theme.textTheme.titleLarge),
+        actions: [
+          if (state.items.isNotEmpty)
+            TextButton.icon(
+              onPressed: controller.clearAll,
+              icon: const Icon(Icons.delete_outline),
+              label: const Text('Delete all'),
+            ),
+        ],
       ),
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 600),
-            child: ListView(
-              padding: AppSpacing.page,
-              children: [
-                Wrap(
-                  alignment: WrapAlignment.spaceBetween,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  spacing: AppSpacing.md,
-                  children: [
-                    Text(
-                      unreadCount == 0
-                          ? 'You’re all caught up'
-                          : '$unreadCount unread notifications',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
+            child: state.loading && state.items.isEmpty
+                ? const Center(child: CircularProgressIndicator())
+                : state.items.isEmpty
+                ? const Center(child: Text('No notifications yet'))
+                : ListView.separated(
+                    padding: AppSpacing.page,
+                    itemCount: state.items.length,
+                    separatorBuilder: (_, _) => const Divider(height: 1),
+                    itemBuilder: (context, index) => NotificationTile(
+                      notification: state.items[index],
+                      isUnread: !state.items[index].seen,
                     ),
-                    TextButton(
-                      onPressed: unreadCount == 0
-                          ? null
-                          : () => setState(
-                              () => _readIds.addAll(
-                                sampleNotifications.map(
-                                  (notification) => notification.id,
-                                ),
-                              ),
-                            ),
-                      child: const Text('Mark all as read'),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                Card(
-                  clipBehavior: Clip.antiAlias,
-                  child: Column(
-                    children: [
-                      for (
-                        var index = 0;
-                        index < sampleNotifications.length;
-                        index++
-                      ) ...[
-                        if (index > 0) const Divider(),
-                        NotificationTile(
-                          notification: sampleNotifications[index],
-                          isUnread: _isUnread(sampleNotifications[index]),
-                          onTap: sampleNotifications[index].routeName == null
-                              ? null
-                              : () => _openNotification(
-                                  sampleNotifications[index],
-                                ),
-                        ),
-                      ],
-                    ],
                   ),
-                ),
-              ],
-            ),
           ),
         ),
       ),

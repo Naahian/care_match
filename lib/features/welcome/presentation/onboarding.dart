@@ -5,6 +5,7 @@ import '../../../shared/widgets/brand_header.dart';
 import 'widgets/consultation_illustration.dart';
 import 'widgets/final_controls.dart';
 import 'widgets/final_page.dart';
+import 'widgets/privacy_illustration.dart';
 import 'widgets/standard_controls.dart';
 import 'widgets/standard_page.dart';
 import 'widgets/symptom_illustration.dart';
@@ -56,13 +57,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 const Padding(
                   padding: EdgeInsets.fromLTRB(
                     AppSpacing.lg,
-                    AppSpacing.md,
+                    AppSpacing.lg,
                     AppSpacing.lg,
                     0,
                   ),
                   child: Align(
                     alignment: Alignment.centerLeft,
-                    child: BrandHeader(),
+                    child: BrandHeader(compact: true),
                   ),
                 ),
                 Expanded(
@@ -71,7 +72,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     onPageChanged: (i) => setState(() => _index = i),
                     children: const [
                       StandardPage(
-                        title: 'Describe your symptoms',
+                        title: 'Describe your\nsymptoms',
                         description:
                             'Tell us what you\u2019re experiencing, and our AI '
                             'will match you with the right doctor \u2014 near you.',
@@ -79,7 +80,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         illustration: SymptomIllustration(),
                       ),
                       StandardPage(
-                        title: 'Consult via chat or video',
+                        title: 'Consult via\nchat or video',
                         description:
                             'Get expert advice, ask questions, and get '
                             'personalized guidance \u2014 all from the comfort '
@@ -88,22 +89,25 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         illustration: ConsultationIllustration(),
                       ),
                       StandardPage(
-                        title: 'Your health data stays private',
+                        title: 'Your health data\nstays private',
                         description:
-                            'Your information is encrypted and never leaves '
-                            'your phone. Your trust matters to us.',
+                            'CareMatch uses your information to support your care. '
+                            'Your privacy matters to us.',
                         imageAsset: 'assets/images/welcome_3.png',
+                        illustration: PrivacyIllustration(
+                          imageAsset: 'assets/images/welcome_3.png',
+                        ),
                       ),
                       FinalPage(),
                     ],
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(
+                  padding: EdgeInsets.fromLTRB(
                     AppSpacing.lg,
                     AppSpacing.md,
                     AppSpacing.lg,
-                    AppSpacing.lg,
+                    _isLast ? AppSpacing.md : AppSpacing.xxl - AppSpacing.xs,
                   ),
                   child: _isLast
                       ? FinalControls(

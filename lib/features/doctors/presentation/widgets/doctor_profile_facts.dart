@@ -11,48 +11,39 @@ class DoctorProfileFacts extends StatelessWidget {
   Widget build(BuildContext context) {
     final cards = [
       DoctorProfileFactCard(
-        icon: Icons.medical_services_outlined,
-        title: 'Specialty',
-        value: profile.summary.specialty,
+        icon: Icons.school_outlined,
+        title: 'Qualifications',
+        value: profile.qualifications.isEmpty
+            ? 'Not provided'
+            : profile.qualifications.join(', '),
       ),
       DoctorProfileFactCard(
         icon: Icons.local_hospital_outlined,
-        title: 'Hospital',
-        value: profile.hospital,
+        title: 'Hospital & location',
+        value: profile.practiceLocation ?? profile.hospital,
       ),
       DoctorProfileFactCard(
-        icon: Icons.calendar_month_outlined,
-        title: 'Availability',
-        value: profile.summary.availability,
-        isAvailable: profile.summary.availableToday,
+        icon: Icons.schedule_outlined,
+        title: 'Consultation hours',
+        value: profile.timeAvailable.isEmpty
+            ? 'Not provided'
+            : profile.timeAvailable
+                  .map((range) => '${range.start} – ${range.end}')
+                  .join(', '),
       ),
     ];
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        if (constraints.maxWidth < 300 ||
-            MediaQuery.textScalerOf(context).scale(14) > 20) {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              for (var i = 0; i < cards.length; i++) ...[
-                if (i > 0) const SizedBox(height: AppSpacing.sm),
-                cards[i],
-              ],
+    return Card(
+      child: Padding(
+        padding: AppSpacing.card,
+        child: Column(
+          children: [
+            for (var i = 0; i < cards.length; i++) ...[
+              if (i > 0) const SizedBox(height: AppSpacing.sm),
+              cards[i],
             ],
-          );
-        }
-        return IntrinsicHeight(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              for (var i = 0; i < cards.length; i++) ...[
-                if (i > 0) const SizedBox(width: AppSpacing.sm),
-                Expanded(child: cards[i]),
-              ],
-            ],
-          ),
-        );
-      },
+          ],
+        ),
+      ),
     );
   }
 }

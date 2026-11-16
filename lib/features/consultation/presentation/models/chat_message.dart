@@ -1,12 +1,12 @@
-/// Local display data for the demo conversation screen.
+/// Display values for a stored consultation message.
 class ChatMessage {
   const ChatMessage({
     required this.text,
     required this.time,
-    this.isFromPatient = false,
+    this.isMine = false,
   });
 
   final String text;
   final String time;
-  final bool isFromPatient;
+  final bool isMine;
 }

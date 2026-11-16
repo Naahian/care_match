@@ -4,6 +4,7 @@
 class DoctorSummary {
   const DoctorSummary({
     required this.name,
+    this.photoUrl,
     required this.specialty,
     this.distance = '',
     this.experience = '',
@@ -12,6 +13,7 @@ class DoctorSummary {
   });
 
   final String name;
+  final String? photoUrl;
   final String specialty;
   final String distance;
   final String experience;

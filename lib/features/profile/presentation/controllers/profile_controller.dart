@@ -6,6 +6,7 @@ import '../../../auth/providers.dart' show authSessionProvider;
 import '../../domain/repositories/profile_repository.dart';
 import '../../providers.dart';
 import 'profile_state.dart';
+import '../../account_profile_provider.dart';
 
 final profileControllerProvider =
     NotifierProvider<ProfileController, ProfileState>(ProfileController.new);
@@ -41,7 +42,11 @@ class ProfileController extends Notifier<ProfileState> {
   }
 
   Future<void> load({bool refresh = false}) async {
-    if (state.isLoading || (state.profile != null && !refresh)) return;
+    if (state.isLoading ||
+        state.isSaving ||
+        (state.profile != null && !refresh)) {
+      return;
+    }
     final revision = ++_revision;
     state = ProfileState(profile: state.profile, isLoading: true);
     try {
@@ -56,6 +61,37 @@ class ProfileController extends Notifier<ProfileState> {
             ? error.message
             : 'Could not load your profile. Please try again.',
       );
+    }
+  }
+
+  Future<bool> save(ProfileUpdate update) async {
+    if (state.profile == null || state.isLoading || state.isSaving) {
+      return false;
+    }
+    final validationError = update.validationError;
+    if (validationError != null) {
+      state = ProfileState(profile: state.profile, saveError: validationError);
+      return false;
+    }
+    final revision = ++_revision;
+    state = ProfileState(profile: state.profile, isSaving: true);
+    try {
+      final profile = await ref
+          .read(profileRepositoryProvider)
+          .updateProfile(update);
+      if (!ref.mounted || revision != _revision) return false;
+      state = ProfileState(profile: profile);
+      ref.invalidate(accountProfileProvider);
+      return true;
+    } catch (error) {
+      if (!ref.mounted || revision != _revision) return false;
+      state = ProfileState(
+        profile: state.profile,
+        saveError: error is ProfileException
+            ? error.message
+            : 'Could not save your profile. Please try again.',
+      );
+      return false;
     }
   }
 }

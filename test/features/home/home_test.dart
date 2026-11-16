@@ -1,3 +1,5 @@
+import 'package:care_match/features/profile/account_profile_provider.dart';
+import 'package:care_match/features/profile/domain/entities/user_profile.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
@@ -50,6 +52,9 @@ void main() {
           (index) => {
             'uid': 'doctor-$index',
             'display_name': ' Doctor $index ',
+            'photo_url': index == 0
+                ? 'https://example.com/doctor.jpg?v=2'
+                : null,
             'specialties': [' Medicine ', 'Cardiology'],
             'degrees': ['MBBS', 'MD'],
             'clinics': [
@@ -73,6 +78,8 @@ void main() {
       expect(doctors, hasLength(5));
       expect(doctors.first.id, 'doctor-0');
       expect(doctors.first.name, 'Doctor 0');
+      expect(doctors.first.photoUrl, 'https://example.com/doctor.jpg?v=2');
+      expect(doctors[1].photoUrl, isNull);
       expect(doctors.first.specialties, ['Medicine', 'Cardiology']);
       expect(doctors.first.availability, isNull);
       expect(doctors.first.degrees, ['MBBS', 'MD']);
@@ -187,7 +194,12 @@ void main() {
     () async {
       final fake = _Repository();
       final container = ProviderContainer.test(
-        overrides: [homeRepositoryProvider.overrideWithValue(fake)],
+        overrides: [
+          homeRepositoryProvider.overrideWithValue(fake),
+          accountProfileProvider.overrideWith(
+            (ref) async => const UserProfile(role: 'patient'),
+          ),
+        ],
       );
       container.listen(homeControllerProvider, (_, _) {});
       final controller = container.read(homeControllerProvider.notifier);
@@ -223,7 +235,12 @@ void main() {
     addTearDown(router.dispose);
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [homeRepositoryProvider.overrideWithValue(fake)],
+        overrides: [
+          homeRepositoryProvider.overrideWithValue(fake),
+          accountProfileProvider.overrideWith(
+            (ref) async => const UserProfile(role: 'patient'),
+          ),
+        ],
         child: Sizer(
           builder: (_, _, _) =>
               MaterialApp.router(theme: AppTheme.light, routerConfig: router),
@@ -231,8 +248,14 @@ void main() {
       ),
     );
     await tester.pump();
+    await tester.pump();
     expect(fake.calls, 1);
-    expect(find.byType(DoctorCardShimmer), findsNWidgets(5));
+    await tester.scrollUntilVisible(
+      find.text('Featured doctors'),
+      150,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.byType(DoctorCardShimmer), findsNWidgets(2));
     await tester.pump(const Duration(milliseconds: 300));
     expect(tester.takeException(), isNull);
     fake.result.complete(
@@ -250,7 +273,7 @@ void main() {
     expect(find.byType(DoctorCard), findsNWidgets(5));
     expect(find.byType(DoctorCardShimmer), findsNothing);
     expect(find.text('Dr. Emily Carter'), findsNothing);
-    await tester.drag(find.byType(ListView).first, const Offset(0, -350));
+    await tester.ensureVisible(find.text('API Doctor 0'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('API Doctor 0'));
     await tester.pumpAndSettle();
@@ -271,7 +294,12 @@ void main() {
       final fake = _Repository();
       await tester.pumpWidget(
         ProviderScope(
-          overrides: [homeRepositoryProvider.overrideWithValue(fake)],
+          overrides: [
+            homeRepositoryProvider.overrideWithValue(fake),
+            accountProfileProvider.overrideWith(
+              (ref) async => const UserProfile(role: 'patient'),
+            ),
+          ],
           child: Sizer(
             builder: (_, _, _) =>
                 MaterialApp(theme: AppTheme.light, home: const HomeScreen()),

@@ -34,18 +34,18 @@ class PreferenceTile extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.sm,
-          vertical: AppSpacing.sm,
+          vertical: AppSpacing.md,
         ),
         child: Row(
           children: [
             Container(
-              width: 40,
-              height: 40,
+              width: 48,
+              height: 48,
               decoration: BoxDecoration(
                 color: iconBackground ?? scheme.primaryContainer,
                 shape: BoxShape.circle,
               ),
-              child: Icon(icon, color: iconColor ?? scheme.primary, size: 25),
+              child: Icon(icon, color: iconColor ?? scheme.primary, size: 27),
             ),
             const SizedBox(width: AppSpacing.md),
             Expanded(

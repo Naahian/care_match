@@ -14,12 +14,12 @@ class ChatTitleBlock extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Chat & Video Consult',
-          style: theme.textTheme.headlineMedium?.copyWith(
+          'Chat & video\nconsult',
+          style: theme.textTheme.headlineLarge?.copyWith(
             color: scheme.onPrimaryContainer,
           ),
         ),
-        const SizedBox(height: AppSpacing.sm),
+        const SizedBox(height: AppSpacing.md),
         Text(
           'Get expert advice, from anywhere. Chat or start a video '
           'consultation with your doctor.',

@@ -1,9 +1,11 @@
 {
     "files.exclude": {
+        "**/.jj": true,
         "**/flutter/ephemeral": true,
         "**/Flutter/ephemeral": true,
         "**/.symlinks": true,
         "**/.plugin_symlinks": true,
+        "**/.widget_preview": true,
         ".dart_tool": true,
         ".idea": true,
         "android": true,

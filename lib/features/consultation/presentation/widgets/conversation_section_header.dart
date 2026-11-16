@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Section header: "Recent Conversations" with a "See all" action.
+/// Section header for the conversation inbox.
 class ConversationSectionHeader extends StatelessWidget {
   const ConversationSectionHeader({super.key});
 
@@ -16,17 +16,6 @@ class ConversationSectionHeader extends StatelessWidget {
             'Recent Conversations',
             style: theme.textTheme.titleMedium?.copyWith(
               color: scheme.onPrimaryContainer,
-            ),
-          ),
-        ),
-        TextButton(
-          onPressed: () {
-            // TODO: navigate to the full conversations list screen
-          },
-          child: Text(
-            'See all',
-            style: theme.textTheme.labelLarge?.copyWith(
-              color: scheme.onSurfaceVariant,
             ),
           ),
         ),

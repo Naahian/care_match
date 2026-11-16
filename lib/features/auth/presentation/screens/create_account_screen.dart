@@ -7,8 +7,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers.dart';
 import '../widgets/auth_validators.dart';
 import '../widgets/auth_error_message.dart';
-import 'package:sizer/sizer.dart';
 import '../widgets/auth_heading.dart';
+import '../widgets/auth_illustration.dart';
+import 'package:care_match/shared/widgets/care_app_bar.dart';
 import '../widgets/auth_text_field.dart';
 import '../widgets/auth_primary_button.dart';
 import '../widgets/auth_social_options.dart';
@@ -70,32 +71,40 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
     return Form(
       key: _formKey,
       child: Scaffold(
-        appBar: AppBar(title: BrandHeader(), centerTitle: true),
+        appBar: careAppBar(context, title: const BrandHeader(compact: true)),
         body: SafeArea(
-          child: Center(
+          child: Align(
+            alignment: Alignment.topCenter,
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 600),
               child: SingleChildScrollView(
-                padding: AppSpacing.page,
+                padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Image.asset(
-                      'assets/images/welcome_4.png',
-                      height: 20.h.clamp(120.0, 220.0),
-                      fit: BoxFit.contain,
-                      excludeFromSemantics: true,
+                    const AuthIllustration(
+                      asset: 'assets/images/welcome_4.png',
+                      height: 140,
                     ),
+                    const SizedBox(height: AppSpacing.md),
                     const AuthHeading(
                       title: 'Create your account',
+                      leftAligned: true,
                       subtitle:
-                          'Get started in minutes and take the first\nstep towards better, personalized care.',
+                          'Get started in minutes and take the first step towards better, personalized care.',
                     ),
                     const SizedBox(height: AppSpacing.lg),
                     DropdownButtonFormField<bool>(
                       initialValue: _isDoctor,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: 'Account type',
+                        fillColor: Theme.of(context).colorScheme.surface,
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: AppRadius.card,
+                          borderSide: BorderSide(
+                            color: Theme.of(context).colorScheme.outlineVariant,
+                          ),
+                        ),
                       ),
                       items: const [
                         DropdownMenuItem(value: false, child: Text('Patient')),
@@ -111,8 +120,7 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
                       controller: _name,
                       enabled: !auth.isLoading,
                       validator: AuthValidators.name,
-                      label: 'Full name',
-                      hint: 'e.g. Sarah Johnson',
+                      hint: 'Full name',
                       icon: Icons.person_outline_rounded,
                       autofillHints: [AutofillHints.name],
                     ),
@@ -121,8 +129,7 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
                       controller: _email,
                       enabled: !auth.isLoading,
                       validator: AuthValidators.email,
-                      label: 'Email address',
-                      hint: 'you@example.com',
+                      hint: 'Email address',
                       icon: Icons.mail_outline_rounded,
                       keyboardType: TextInputType.emailAddress,
                       autofillHints: [AutofillHints.email],
@@ -132,8 +139,7 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
                       controller: _password,
                       enabled: !auth.isLoading,
                       validator: AuthValidators.newPassword,
-                      label: 'Password',
-                      hint: 'Create a strong password',
+                      hint: 'Password',
                       icon: Icons.lock_outline_rounded,
                       isPassword: true,
                       autofillHints: [AutofillHints.newPassword],
@@ -153,6 +159,7 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
                     AuthErrorMessage(message: auth.errorMessage),
                     AuthPrimaryButton(
                       label: 'Create account',
+                      roundedRectangle: true,
                       isLoading: auth.isLoading,
                       onPressed: _agreed && !auth.isLoading ? _submit : null,
                     ),

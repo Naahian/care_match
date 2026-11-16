@@ -157,15 +157,13 @@ void main() {
     },
   );
 
-  testWidgets('Profile selections update locally', (tester) async {
+  testWidgets('Profile editing accepts contact details', (tester) async {
     await tester.pumpWidget(
       app(const SetUpProfileScreen(isEditProfile: false)),
     );
-    await tester.tap(find.text('Select your gender'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Female'));
-    await tester.pumpAndSettle();
-    expect(find.text('Female'), findsOneWidget);
+    await tester.enterText(find.byType(TextFormField).first, 'Jane Doe');
+    expect(find.text('Jane Doe'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

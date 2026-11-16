@@ -10,6 +10,9 @@ class AppointmentModel extends Appointment {
     required super.reason,
     super.notes,
     super.videoRoomId,
+    super.patient,
+    super.patientName,
+    super.type,
   });
 
   factory AppointmentModel.fromJson(Map<String, dynamic> json) {
@@ -56,6 +59,13 @@ class AppointmentModel extends Appointment {
     if (status == null) {
       throw const FormatException('Invalid appointment status.');
     }
+    final rawType = json['appointment_type'] ?? 'video';
+    final type = AppointmentType.values
+        .where((type) => type.value == rawType)
+        .firstOrNull;
+    if (type == null) {
+      throw const FormatException('Invalid appointment type.');
+    }
     return AppointmentModel(
       id: requiredText('appointment_id'),
       doctorId: requiredText('doctor_id'),
@@ -65,6 +75,29 @@ class AppointmentModel extends Appointment {
       reason: requiredText('reason', allowEmpty: true),
       notes: optionalText('notes'),
       videoRoomId: optionalText('video_room_id'),
+      patient: _patient(json['patient'], requiredText('patient_id')),
+      patientName: optionalText('patient_name'),
+      type: type,
+    );
+  }
+
+  static AppointmentPatient? _patient(Object? data, String patientId) {
+    if (data == null) return null;
+    if (data is! Map<String, dynamic> || data['uid'] != patientId) {
+      throw const FormatException('Invalid appointment patient.');
+    }
+    String? text(String key) {
+      final value = data[key];
+      if (value == null) return null;
+      if (value is! String) throw FormatException('Invalid patient $key.');
+      return value.trim().isEmpty ? null : value.trim();
+    }
+
+    return AppointmentPatient(
+      uid: patientId,
+      name: text('display_name'),
+      email: text('email'),
+      phoneNumber: text('phone_number'),
     );
   }
 }

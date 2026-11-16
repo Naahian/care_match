@@ -16,7 +16,7 @@ class AppointmentTimeSlots extends StatelessWidget {
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, constraints) {
       final columns =
-          constraints.maxWidth < 360 ||
+          constraints.maxWidth < 300 ||
               MediaQuery.textScalerOf(context).scale(14) > 20
           ? 2
           : 3;
@@ -33,12 +33,15 @@ class AppointmentTimeSlots extends StatelessWidget {
               onPressed: () => onSelected(slot),
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(
-                  vertical: AppSpacing.md,
+                  vertical: 10,
                   horizontal: AppSpacing.xs,
                 ),
                 backgroundColor: active
                     ? Theme.of(context).colorScheme.primary
-                    : null,
+                    : Theme.of(context).colorScheme.surface,
+                shape: const RoundedRectangleBorder(
+                  borderRadius: AppRadius.card,
+                ),
                 foregroundColor: active
                     ? Theme.of(context).colorScheme.onPrimary
                     : null,

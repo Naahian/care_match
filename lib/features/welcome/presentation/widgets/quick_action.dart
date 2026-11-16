@@ -21,23 +21,35 @@ class QuickAction extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Column(
-      children: [
-        Container(
-          width: 52,
-          height: 52,
-          decoration: BoxDecoration(color: background, shape: BoxShape.circle),
-          child: Icon(icon, color: foreground, size: 26),
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: AppRadius.sheet,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 12),
+        child: Column(
+          children: [
+            Container(
+              width: 42,
+              height: 52,
+              decoration: BoxDecoration(
+                color: background,
+                borderRadius: AppRadius.card,
+              ),
+              child: Icon(icon, color: foreground, size: 20),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: theme.colorScheme.onSurface,
+              ),
+            ),
+          ],
         ),
-        const SizedBox(height: AppSpacing.sm),
-        Text(
-          label,
-          textAlign: TextAlign.center,
-          style: theme.textTheme.labelMedium?.copyWith(
-            color: theme.colorScheme.onSurface,
-          ),
-        ),
-      ],
+      ),
     );
   }
 }

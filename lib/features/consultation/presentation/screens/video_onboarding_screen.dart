@@ -1,5 +1,8 @@
 import 'package:care_match/core/constants/constants.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../../../core/constants/app_routes.dart';
 
 import '../widgets/tips_card.dart';
 import '../widgets/upcoming_consultation.dart';
@@ -10,7 +13,14 @@ import '../widgets/video_title_block.dart';
 /// Pre-call "Video Consultation" screen: upcoming session summary,
 /// preparation tips and a pinned "Join Consultation" button.
 class VideoOnboardingScreen extends StatelessWidget {
-  const VideoOnboardingScreen({super.key});
+  const VideoOnboardingScreen({
+    super.key,
+    this.appointmentId,
+    this.consultation,
+  });
+
+  final String? appointmentId;
+  final UpcomingConsultation? consultation;
 
   @override
   Widget build(BuildContext context) {
@@ -35,9 +45,17 @@ class VideoOnboardingScreen extends StatelessWidget {
                       const SizedBox(height: AppSpacing.lg),
                       const VideoTitleBlock(),
                       const SizedBox(height: AppSpacing.lg),
-                      UpcomingConsultationCard(
-                        consultation: sampleConsultation,
-                      ),
+                      if (consultation != null)
+                        UpcomingConsultationCard(consultation: consultation!)
+                      else
+                        const Card(
+                          child: Padding(
+                            padding: AppSpacing.card,
+                            child: Text(
+                              'Choose an upcoming appointment to join a video consultation.',
+                            ),
+                          ),
+                        ),
                       const SizedBox(height: AppSpacing.md),
                       const TipsCard(),
                     ],
@@ -53,11 +71,18 @@ class VideoOnboardingScreen extends StatelessWidget {
                   child: SizedBox(
                     width: double.infinity,
                     child: FilledButton.icon(
-                      onPressed: () {
-                        // TODO: navigate to the video call room and join the session
-                      },
+                      onPressed: appointmentId == null
+                          ? () => context.pushNamed(AppRoutes.appointments)
+                          : () => context.pushNamed(
+                              AppRoutes.videoCall,
+                              pathParameters: {'appointmentId': appointmentId!},
+                            ),
                       icon: const Icon(Icons.videocam_rounded),
-                      label: const Text('Join Consultation'),
+                      label: Text(
+                        appointmentId == null
+                            ? 'View Appointments'
+                            : 'Join Consultation',
+                      ),
                     ),
                   ),
                 ),

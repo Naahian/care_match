@@ -1,6 +1,5 @@
 import 'package:care_match/core/constants/constants.dart';
 import 'package:flutter/material.dart';
-import 'package:sizer/sizer.dart';
 import 'package:care_match/shared/widgets/doctor_avatar.dart';
 import '../models/appointment_draft.dart';
 
@@ -28,7 +27,8 @@ class AppointmentDoctorCard extends StatelessWidget {
               children: [
                 DoctorAvatar(
                   doctorName: doctor.summary.name,
-                  radius: 10.w.clamp(28.0, 44.0),
+                  photoUrl: doctor.summary.photoUrl,
+                  radius: 26,
                 ),
                 const SizedBox(width: AppSpacing.md),
                 Expanded(
@@ -43,63 +43,59 @@ class AppointmentDoctorCard extends StatelessWidget {
                       ),
                       Text(
                         doctor.summary.specialty,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: scheme.onSurfaceVariant,
-                        ),
+                        style: theme.textTheme.bodySmall,
                       ),
-                      const SizedBox(height: AppSpacing.sm),
-                      if (showProfileDetails) ...[
-                        Text(doctor.hospital, style: theme.textTheme.bodySmall),
-                      ] else
-                        Wrap(
-                          spacing: AppSpacing.sm,
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          children: [
-                            Icon(
-                              draft.type.icon,
-                              color: scheme.primary,
-                              size: 20,
-                            ),
-                            Text(
-                              draft.type.label,
-                              style: theme.textTheme.bodySmall,
-                            ),
-                            Text(
-                              draft.priceFor(draft.type),
-                              style: theme.textTheme.labelLarge?.copyWith(
-                                color: scheme.primary,
-                              ),
-                            ),
-                          ],
-                        ),
                     ],
                   ),
                 ),
               ],
             ),
-            if (showProfileDetails) ...[
+            if (!showProfileDetails) ...[
               const SizedBox(height: AppSpacing.sm),
-              Wrap(
-                spacing: AppSpacing.xs,
-                runSpacing: AppSpacing.xs,
+              Row(
                 children: [
-                  for (final area in doctor.careAreas.take(2))
-                    Chip(
-                      label: Text(area),
-                      labelStyle: theme.textTheme.labelSmall?.copyWith(
+                  Icon(draft.type.icon, color: scheme.error, size: 20),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      draft.type.label,
+                      style: theme.textTheme.bodySmall,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      draft.priceFor(draft.type),
+                      textAlign: TextAlign.end,
+                      style: theme.textTheme.titleSmall?.copyWith(
                         color: scheme.primary,
                       ),
-                      backgroundColor: scheme.primaryContainer,
-                      side: BorderSide.none,
                     ),
-                  Chip(
-                    label: Text(doctor.summary.availability),
-                    labelStyle: theme.textTheme.labelSmall?.copyWith(
-                      color: scheme.onSecondaryContainer,
-                    ),
-                    backgroundColor: scheme.secondaryContainer,
-                    side: BorderSide.none,
                   ),
+                ],
+              ),
+            ],
+            if (showProfileDetails) ...[
+              const SizedBox(height: AppSpacing.sm),
+              Row(
+                children: [
+                  for (final area in doctor.careAreas.take(2)) ...[
+                    Expanded(
+                      child: Container(
+                        alignment: Alignment.center,
+                        padding: const EdgeInsets.symmetric(
+                          vertical: AppSpacing.sm,
+                        ),
+                        decoration: BoxDecoration(
+                          color: scheme.surfaceContainer,
+                          borderRadius: AppRadius.button,
+                        ),
+                        child: Text(area, style: theme.textTheme.labelSmall),
+                      ),
+                    ),
+                    if (area != doctor.careAreas.take(2).last)
+                      const SizedBox(width: AppSpacing.sm),
+                  ],
                 ],
               ),
             ],

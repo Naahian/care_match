@@ -45,8 +45,26 @@ class FirebaseAuthService {
   Future<void> reloadUser() => _requireUser().reload();
 
   /// Returns null when signed out. Firebase manages token storage and renewal.
-  Future<String?> getIdToken({bool forceRefresh = false}) async =>
-      currentUser?.getIdToken(forceRefresh);
+  Future<String?> getIdToken({bool forceRefresh = false}) async {
+    final user = currentUser;
+    try {
+      final token = await user?.getIdToken(forceRefresh);
+      // Do not attach an old account's token after an account switch.
+      return currentUser?.uid == user?.uid ? token : null;
+    } on FirebaseAuthException catch (error) {
+      if (const {
+            'user-token-expired',
+            'invalid-user-token',
+            'user-disabled',
+            'user-not-found',
+            'invalid-refresh-token',
+          }.contains(error.code) &&
+          currentUser?.uid == user?.uid) {
+        await signOut();
+      }
+      rethrow;
+    }
+  }
 
   /// Starts native phone verification using an E.164 number (e.g. +88017...).
   ///

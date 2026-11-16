@@ -15,6 +15,9 @@ Dio createDioClient({
   required String baseUrl,
   required AccessTokenReader readAccessToken,
   HttpClientAdapter? adapter,
+  AccessTokenReader? refreshAccessToken,
+  String? Function()? sessionId,
+  Future<void> Function()? onSessionExpired,
 }) {
   final uri = Uri.tryParse(baseUrl);
   if (uri == null ||
@@ -40,7 +43,14 @@ Dio createDioClient({
   );
   if (adapter != null) dio.httpClientAdapter = adapter;
   dio.interceptors.add(
-    AuthInterceptor(apiOrigin: uri, readAccessToken: readAccessToken),
+    AuthInterceptor(
+      apiOrigin: uri,
+      readAccessToken: readAccessToken,
+      dio: dio,
+      refreshAccessToken: refreshAccessToken,
+      onSessionExpired: onSessionExpired,
+      sessionId: sessionId,
+    ),
   );
   return dio;
 }

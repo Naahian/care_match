@@ -1,7 +1,9 @@
 import '../entities/appointment.dart';
 
 abstract interface class AppointmentsRepository {
-  Future<List<Appointment>> getAppointments();
+  Future<List<Appointment>> getAppointments({
+    AppointmentRole role = AppointmentRole.patient,
+  });
   Future<Appointment> updateStatus({
     required String appointmentId,
     required AppointmentStatus status,

@@ -17,63 +17,116 @@ class SymptomCard extends StatelessWidget {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
 
-    const noBorder = OutlineInputBorder(
-      borderRadius: AppRadius.chip,
-      borderSide: BorderSide.none,
-    );
-
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.lg),
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
       decoration: BoxDecoration(
-        color: scheme.primaryContainer,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            scheme.primary,
+            Color.lerp(scheme.primary, scheme.tertiary, .16)!,
+          ],
+        ),
         borderRadius: AppRadius.sheet,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'How are you feeling today?',
-            style: theme.textTheme.headlineSmall?.copyWith(
-              color: scheme.onPrimaryContainer,
+            'CARE THAT STARTS WITH YOU',
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: Colors.white,
+              fontWeight: FontWeight.w700,
+              letterSpacing: .5,
             ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Text(
+                  'How are you feeling today?',
+                  style: theme.textTheme.headlineMedium?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              const Icon(
+                Icons.smart_toy_rounded,
+                size: 56,
+                color: Colors.white,
+              ),
+            ],
           ),
           const SizedBox(height: AppSpacing.sm),
           Text(
             'Describe your symptoms to get matched with the right doctor.',
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: scheme.onSurfaceVariant,
+              color: Colors.white.withValues(alpha: .9),
             ),
           ),
-          const SizedBox(height: AppSpacing.md),
-          TextField(
-            controller: controller,
-            textInputAction: TextInputAction.search,
-            onSubmitted: (_) => onSubmit(),
-            style: theme.textTheme.bodyMedium,
-            decoration: InputDecoration(
-              hintText: 'e.g. headache, sore throat, anxiety...',
-              hintStyle: theme.textTheme.bodyMedium?.copyWith(
-                color: scheme.onSurfaceVariant,
-              ),
-              fillColor: scheme.surfaceContainerLowest,
-              border: noBorder,
-              enabledBorder: noBorder,
-              focusedBorder: noBorder,
-              prefixIcon: Icon(
-                Icons.auto_awesome_rounded,
-                color: scheme.primary,
-              ),
-              suffixIcon: Padding(
-                padding: const EdgeInsets.all(AppSpacing.xs),
-                child: IconButton.filled(
-                  onPressed: onSubmit,
-                  icon: const Icon(
-                    Icons.arrow_forward_rounded,
-                    color: Colors.white,
-                  ),
-                  tooltip: 'Search',
+          const SizedBox(height: AppSpacing.lg),
+          Container(
+            height: 48,
+            padding: const EdgeInsets.only(left: AppSpacing.md, right: 4),
+            decoration: BoxDecoration(
+              color: scheme.surface,
+              borderRadius: AppRadius.input,
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.auto_awesome_rounded,
+                  color: scheme.primary,
+                  size: 20,
                 ),
-              ),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: TextField(
+                    controller: controller,
+                    //        textInputAction: TextInputAction.search,
+                    onSubmitted: (_) => onSubmit(),
+                    textAlignVertical: TextAlignVertical.center,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: scheme.onSurface,
+                    ),
+                    decoration: InputDecoration(
+                      isCollapsed: true,
+                      hintText: 'e.g. headache, sore throat...',
+                      hintStyle: theme.textTheme.bodySmall?.copyWith(
+                        color: scheme.onSurfaceVariant,
+                      ),
+                      filled: false,
+                      border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      disabledBorder: InputBorder.none,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.xs),
+                Material(
+                  color: scheme.primaryContainer,
+                  borderRadius: AppRadius.input,
+                  child: InkWell(
+                    borderRadius: AppRadius.input,
+                    onTap: onSubmit,
+                    child: SizedBox(
+                      width: 40,
+                      height: 40,
+                      child: Icon(
+                        Icons.arrow_forward_rounded,
+                        color: scheme.primary,
+                        size: 22,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],

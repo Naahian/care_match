@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+// ------------- API ENDPOINTS -------------
+
 abstract final class ApiEndpoints {
   static const String baseUrl =
       'https://care-match-backend.onrender.com/api/v1';
@@ -8,18 +10,27 @@ abstract final class ApiEndpoints {
   static final String resetPassword = "/users/reset-password";
   static final String doctors = "/users/doctors";
   static final String profile = "/users/me";
+  static const String medicalReports = "/users/me/medical-reports";
+  static const String prescriptions = "/users/me/prescriptions";
   static final String payments = "/payments";
+  static String paymentStatus(String id) => "/payments/$id";
   static final String triage = "/triage";
+
   static final String video = "/video/token";
+  static final String chats = "/chats"; // create, list chats
+  static String getChat(String id) => "/chats/$id";
+  static String messages(String id) =>
+      "/chats/$id/messages"; // list, send message
+
   static final String appointments = "/appointments";
   static String appointmentStatus(String id) => "/appointments/$id/status";
 }
 
-/// App-wide, non-visual constants.
-/// Visual tokens live in `app_colors.dart`, `app_typography.dart`,
-/// `app_spacing.dart`, and `app_radius.dart`.
+// ------------- APP CONSTANTS -------------
+
 abstract final class AppConstants {
   static const String appName = 'Care Match';
+  static const String agoraAppId = '1e93c2cab003458a8a8dee0717443573';
   static const int defaultConsultationFee = 100;
   static const String defaultConsultationPrice = '৳$defaultConsultationFee';
 
@@ -30,6 +41,8 @@ abstract final class AppConstants {
   static const Duration debounceDelay = Duration(milliseconds: 300);
   static const Duration requestTimeout = Duration(seconds: 30);
 }
+
+// ------------- APP RADIUS -------------
 
 abstract final class AppRadius {
   static const double sm = 8;
@@ -44,6 +57,8 @@ abstract final class AppRadius {
   static const BorderRadius chip = BorderRadius.all(Radius.circular(full));
   static const BorderRadius sheet = BorderRadius.all(Radius.circular(xl));
 }
+
+// ------------- APP SPACING -------------
 
 abstract final class AppSpacing {
   static const double xs = 4;

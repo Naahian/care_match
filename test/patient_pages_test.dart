@@ -1,3 +1,5 @@
+import 'package:care_match/features/records/domain/patient_record.dart';
+import 'package:care_match/features/records/providers.dart';
 import 'support/appointments_test_scope.dart';
 import 'package:care_match/features/appointments/providers.dart';
 import 'package:care_match/features/doctors/providers.dart';
@@ -20,6 +22,7 @@ import 'package:sizer/sizer.dart';
 
 Widget _profileScope(Widget child) => ProviderScope(
   overrides: [
+    recordsRepositoryProvider.overrideWithValue(_EmptyRecordsRepository()),
     profileRepositoryProvider.overrideWithValue(_EmptyProfileRepository()),
     appointmentsRepositoryProvider.overrideWithValue(
       TestAppointmentsRepository(),
@@ -34,7 +37,11 @@ Widget _profileScope(Widget child) => ProviderScope(
 
 class _EmptyProfileRepository implements ProfileRepository {
   @override
-  Future<UserProfile> getProfile() async => const UserProfile();
+  Future<UserProfile> updateProfile(ProfileUpdate update) async =>
+      const UserProfile();
+
+  @override
+  Future<UserProfile> getProfile() async => const UserProfile(role: 'patient');
 }
 
 void main() {
@@ -46,7 +53,7 @@ void main() {
       addTearDown(tester.view.reset);
       for (final screen in [
         _profileScope(const MyProfileScreen()),
-        const MyReportsScreen(),
+        _profileScope(const MyReportsScreen()),
         appointmentsTestScope(const MyAppointmentsScreen()),
       ]) {
         await tester.pumpWidget(
@@ -118,7 +125,7 @@ void main() {
   });
 
   testWidgets(
-    'Upcoming appointments show server statuses and cancellation actions',
+    'Patient appointments show server statuses without cancellation actions',
     (tester) async {
       final router = createAppRouter(initialLocation: '/appointments');
       addTearDown(router.dispose);
@@ -130,13 +137,20 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byType(PatientAppointmentCard), findsWidgets);
       expect(find.text('Requested'), findsWidgets);
+      await tester.scrollUntilVisible(find.text('Confirmed'), 150);
       expect(find.text('Confirmed'), findsOneWidget);
       expect(find.text('Join video'), findsNothing);
       expect(find.text('Join chat'), findsNothing);
       await tester.scrollUntilVisible(find.text('Dr. Sophia Nguyen'), 200);
-      expect(find.text('Cancel appointment'), findsWidgets);
+      expect(find.text('Cancel appointment'), findsNothing);
       expect(find.text('Reschedule'), findsNothing);
       await tester.pumpWidget(const SizedBox());
     },
   );
+}
+
+class _EmptyRecordsRepository implements RecordsRepository {
+  @override
+  Future<RecordPage> list(RecordKind kind, {int offset = 0}) async =>
+      const RecordPage([], null);
 }

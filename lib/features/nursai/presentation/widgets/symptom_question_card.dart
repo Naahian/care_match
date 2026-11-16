@@ -5,16 +5,20 @@ class SymptomQuestionCard extends StatelessWidget {
   const SymptomQuestionCard({
     super.key,
     required this.title,
+    required this.step,
     required this.icon,
     required this.child,
   });
   final String title;
+  final String step;
   final IconData icon;
   final Widget child;
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Card(
+      color: theme.colorScheme.surface,
+      shape: const RoundedRectangleBorder(borderRadius: AppRadius.sheet),
       child: Padding(
         padding: AppSpacing.card,
         child: Column(
@@ -22,8 +26,13 @@ class SymptomQuestionCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(icon, color: theme.colorScheme.primary),
-                const SizedBox(width: AppSpacing.sm),
+                Text(
+                  step,
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+                const SizedBox(width: 18),
                 Expanded(
                   child: Text(
                     title,

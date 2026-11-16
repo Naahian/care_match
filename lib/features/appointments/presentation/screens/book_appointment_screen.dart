@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../models/appointment_draft.dart';
 import '../widgets/appointment_continue_button.dart';
 import '../widgets/appointment_doctor_card.dart';
+import '../widgets/booking_flow_header.dart';
 import '../widgets/consultation_type_card.dart';
 
 class BookAppointmentScreen extends StatefulWidget {
@@ -25,18 +26,40 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
     super.dispose();
   }
 
+  InputDecoration _fieldDecoration(BuildContext context, String hint) {
+    final scheme = Theme.of(context).colorScheme;
+    final border = OutlineInputBorder(
+      borderRadius: AppRadius.card,
+      borderSide: BorderSide(color: scheme.outlineVariant),
+    );
+    return InputDecoration(
+      hintText: hint,
+      hintStyle: Theme.of(context).textTheme.bodySmall,
+      fillColor: scheme.surface,
+      enabledBorder: border,
+      focusedBorder: border.copyWith(
+        borderSide: BorderSide(color: scheme.primary, width: 1.5),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: Text('Book Appointment'), centerTitle: true),
     body: SafeArea(
       child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 600),
           child: Column(
             children: [
+              const BookingFlowHeader(title: 'Book appointment', step: 1),
               Expanded(
                 child: ListView(
-                  padding: AppSpacing.page,
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.lg,
+                    0,
+                    AppSpacing.lg,
+                    AppSpacing.md,
+                  ),
                   children: [
                     AppointmentDoctorCard(
                       draft: _draft,
@@ -45,39 +68,25 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
                     const SizedBox(height: AppSpacing.md),
                     Text(
                       'Consultation type',
-                      style: Theme.of(context).textTheme.titleMedium,
+                      style: Theme.of(context).textTheme.titleLarge,
                     ),
                     const SizedBox(height: AppSpacing.sm),
-                    LayoutBuilder(
-                      builder: (context, constraints) {
-                        final columns =
-                            constraints.maxWidth < 340 ||
-                                MediaQuery.textScalerOf(context).scale(14) > 20
-                            ? 1
-                            : 2;
-                        return Wrap(
-                          spacing: AppSpacing.sm,
-                          runSpacing: AppSpacing.sm,
-                          children: ConsultationType.values
-                              .map(
-                                (type) => SizedBox(
-                                  width:
-                                      (constraints.maxWidth -
-                                          AppSpacing.sm * (columns - 1)) /
-                                      columns,
-                                  child: ConsultationTypeCard(
-                                    type: type,
-                                    price: _draft.priceFor(type),
-                                    selected: _draft.type == type,
-                                    onTap: () => setState(() {
-                                      _draft.type = type;
-                                    }),
-                                  ),
-                                ),
-                              )
-                              .toList(),
-                        );
-                      },
+                    Column(
+                      children: ConsultationType.values
+                          .map(
+                            (type) => Padding(
+                              padding: const EdgeInsets.only(
+                                bottom: AppSpacing.sm,
+                              ),
+                              child: ConsultationTypeCard(
+                                type: type,
+                                price: _draft.priceFor(type),
+                                selected: _draft.type == type,
+                                onTap: () => setState(() => _draft.type = type),
+                              ),
+                            ),
+                          )
+                          .toList(),
                     ),
                     const SizedBox(height: AppSpacing.md),
                     Text(
@@ -87,12 +96,13 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
                     const SizedBox(height: AppSpacing.sm),
                     TextField(
                       controller: _reasonController,
-                      minLines: 3,
-                      maxLines: 5,
+                      minLines: 2,
+                      maxLines: 4,
                       maxLength: 500,
                       onChanged: (value) => _draft.reason = value,
-                      decoration: const InputDecoration(
-                        hintText: 'Describe the reason for your visit',
+                      decoration: _fieldDecoration(
+                        context,
+                        'Describe the reason for your visit',
                       ),
                     ),
                     const SizedBox(height: AppSpacing.md),
@@ -103,12 +113,12 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
                     const SizedBox(height: AppSpacing.sm),
                     TextField(
                       controller: _notesController,
-                      minLines: 3,
-                      maxLines: 5,
+                      minLines: 1,
+                      maxLines: 4,
                       onChanged: (value) => _draft.notes = value,
-                      decoration: const InputDecoration(
-                        hintText:
-                            'Add additional details, symptoms, or questions for the doctor…',
+                      decoration: _fieldDecoration(
+                        context,
+                        'Add any notes for the doctor',
                       ),
                     ),
                   ],

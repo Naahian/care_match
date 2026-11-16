@@ -1,17 +1,18 @@
-enum BreathingDifficulty { no, aLittle, yes }
-
 /// Patient-provided details for a triage assessment.
 class SymptomIntake {
-  const SymptomIntake({
+  SymptomIntake({
     required this.symptoms,
     required this.age,
-    required this.duration,
+    required this.durationDays,
     required this.location,
-    required this.breathingDifficulty,
-  });
+    this.medicalHistory = '',
+    List<String> currentMedications = const [],
+  }) : currentMedications = List.unmodifiable(currentMedications);
+
   final String symptoms;
   final int age;
-  final String duration;
+  final int durationDays;
+  final String medicalHistory;
+  final List<String> currentMedications;
   final String location;
-  final BreathingDifficulty breathingDifficulty;
 }

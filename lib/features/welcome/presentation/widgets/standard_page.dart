@@ -28,12 +28,12 @@ class StandardPage extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const SizedBox(height: AppSpacing.md),
+            const SizedBox(height: AppSpacing.lg),
             Text(
               title,
+              textAlign: TextAlign.center,
               style: theme.textTheme.headlineLarge?.copyWith(
                 color: scheme.onPrimaryContainer,
               ),
@@ -42,12 +42,17 @@ class StandardPage extends StatelessWidget {
             const SizedBox(height: AppSpacing.md),
             Text(
               description,
-              style: theme.textTheme.bodyLarge?.copyWith(
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium?.copyWith(
                 color: scheme.onSurfaceVariant,
               ),
             ),
-            Expanded(
-              child: illustration ?? IllustrationSlot(imageAsset: imageAsset),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 64, 12, 24),
+              child: IllustrationSlot(
+                imageAsset: imageAsset,
+                illustration: illustration,
+              ),
             ),
           ],
         ),

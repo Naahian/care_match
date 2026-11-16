@@ -5,15 +5,14 @@ class TriageRequestModel {
   final SymptomIntake intake;
 
   Map<String, Object?> toJson() => {
-    'symptoms':
-        '${intake.symptoms.trim()}\n'
-        'Duration: ${intake.duration}.\n'
-        'Breathing difficulty: ${switch (intake.breathingDifficulty) {
-          BreathingDifficulty.no => 'No',
-          BreathingDifficulty.aLittle => 'A little',
-          BreathingDifficulty.yes => 'Yes',
-        }}.',
+    'symptoms': intake.symptoms.trim(),
     'age': intake.age,
+    'duration_days': intake.durationDays,
+    'medical_history': intake.medicalHistory.trim(),
+    'current_medications': intake.currentMedications
+        .map((medication) => medication.trim())
+        .where((medication) => medication.isNotEmpty)
+        .toList(),
     'location': intake.location.trim(),
   };
 }

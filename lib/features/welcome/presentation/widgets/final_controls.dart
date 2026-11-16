@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 
 import 'page_dots.dart';
 
-/// Page 4: "Get started" button, login link, then dots.
+/// Last-page dots, primary action and login link.
 class FinalControls extends StatelessWidget {
   const FinalControls({
     super.key,
@@ -25,15 +25,23 @@ class FinalControls extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
+        PageDots(index: index, count: count),
+        const SizedBox(height: AppSpacing.lg),
         SizedBox(
           width: double.infinity,
           child: FilledButton(
             onPressed: onGetStarted,
+            style: FilledButton.styleFrom(
+              minimumSize: const Size(0, 56),
+              shape: const RoundedRectangleBorder(borderRadius: AppRadius.card),
+            ),
             child: const Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text('Get started'),
-                SizedBox(width: AppSpacing.sm),
+                SizedBox(width: 20),
+                Expanded(
+                  child: Text('Get started', textAlign: TextAlign.center),
+                ),
                 Icon(Icons.arrow_forward_rounded, size: 20),
               ],
             ),
@@ -64,8 +72,6 @@ class FinalControls extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: AppSpacing.sm),
-        PageDots(index: index, count: count),
       ],
     );
   }

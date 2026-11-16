@@ -7,53 +7,44 @@ class AssessmentStatusCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final labels = ['Assessing your symptom details'];
-    final icons = [Icons.description_outlined];
     return Card(
+      shape: const RoundedRectangleBorder(borderRadius: AppRadius.sheet),
       child: Padding(
         padding: AppSpacing.card,
-        child: Column(
+        child: Row(
           children: [
-            for (var index = 0; index < labels.length; index++)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-                child: Row(
-                  children: [
-                    CircleAvatar(
-                      backgroundColor: theme.colorScheme.primaryContainer,
-                      child: Icon(
-                        icons[index],
-                        color: theme.colorScheme.primary,
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.md),
-                    Expanded(
-                      child: Text(
-                        labels[index],
-                        style: theme.textTheme.bodyMedium,
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.sm),
-                    if (index < activeStage)
-                      Icon(
-                        Icons.check_circle_rounded,
-                        color: theme.colorScheme.primary,
-                      )
-                    else if (index == activeStage)
-                      SizedBox.square(
-                        dimension: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: theme.colorScheme.primary,
-                        ),
-                      )
-                    else
-                      Icon(
-                        Icons.radio_button_unchecked_rounded,
-                        color: theme.colorScheme.outline,
-                      ),
-                  ],
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surfaceContainer,
+                borderRadius: AppRadius.input,
+              ),
+              child: Icon(
+                Icons.description_outlined,
+                color: theme.colorScheme.primary,
+              ),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Text(
+                'Assessing your\nsymptom details',
+                style: theme.textTheme.titleSmall,
+              ),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            if (activeStage == 0)
+              SizedBox.square(
+                dimension: 22,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.5,
+                  color: theme.colorScheme.primary,
                 ),
+              )
+            else
+              Icon(
+                Icons.check_circle_rounded,
+                color: theme.colorScheme.primary,
               ),
           ],
         ),

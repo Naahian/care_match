@@ -5,7 +5,6 @@ import '../widgets/doctors_results.dart';
 import 'package:care_match/core/constants/app_routes.dart';
 import 'package:go_router/go_router.dart';
 import 'package:care_match/core/constants/constants.dart';
-import 'package:care_match/shared/widgets/brand_header.dart';
 import 'package:care_match/shared/widgets/bottom_navbar.dart';
 import 'package:flutter/material.dart';
 
@@ -34,7 +33,7 @@ class _FindDoctorScreenState extends ConsumerState<FindDoctorScreen> {
       if (!mounted) return;
       final controller = ref.read(doctorsControllerProvider.notifier);
       controller.search(widget.initialQuery);
-      unawaited(controller.load());
+      unawaited(controller.load(refresh: true));
     });
   }
 
@@ -68,6 +67,9 @@ class _FindDoctorScreenState extends ConsumerState<FindDoctorScreen> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(doctorsControllerProvider);
+    final specialties =
+        state.doctors.expand((doctor) => doctor.specialties).toSet().toList()
+          ..sort();
     return Scaffold(
       bottomNavigationBar: BottomNavBar(current: 1),
       body: SafeArea(
@@ -83,14 +85,64 @@ class _FindDoctorScreenState extends ConsumerState<FindDoctorScreen> {
                 slivers: [
                   SliverPadding(
                     padding: const EdgeInsets.fromLTRB(
-                      AppSpacing.md,
-                      AppSpacing.md,
-                      AppSpacing.md,
+                      AppSpacing.lg,
+                      AppSpacing.lg,
+                      AppSpacing.lg,
                       0,
                     ),
                     sliver: SliverList(
                       delegate: SliverChildListDelegate([
-                        const BrandHeader(),
+                        Row(
+                          children: [
+                            Container(
+                              width: 36,
+                              height: 36,
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.primary,
+                                borderRadius: AppRadius.button,
+                              ),
+                              child: Icon(
+                                Icons.add,
+                                color: Theme.of(context).colorScheme.onPrimary,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                'CareMatch',
+                                style: Theme.of(context).textTheme.headlineSmall
+                                    ?.copyWith(fontWeight: FontWeight.w700),
+                              ),
+                            ),
+                            PopupMenuButton<String>(
+                              tooltip: 'Filter by specialty',
+                              icon: const Icon(Icons.tune),
+                              style: IconButton.styleFrom(
+                                backgroundColor: Theme.of(
+                                  context,
+                                ).colorScheme.surface,
+                                shape: const RoundedRectangleBorder(
+                                  borderRadius: AppRadius.card,
+                                ),
+                              ),
+                              onSelected: ref
+                                  .read(doctorsControllerProvider.notifier)
+                                  .selectSpecialty,
+                              itemBuilder: (_) => [
+                                for (final specialty in ['', ...specialties])
+                                  CheckedPopupMenuItem(
+                                    value: specialty,
+                                    checked: state.specialty == specialty,
+                                    child: Text(
+                                      specialty.isEmpty
+                                          ? 'All specialties'
+                                          : specialty,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ],
+                        ),
                         const SizedBox(height: AppSpacing.lg),
                         const FindDoctorTitleBlock(),
                         const SizedBox(height: AppSpacing.lg),
@@ -104,12 +156,7 @@ class _FindDoctorScreenState extends ConsumerState<FindDoctorScreen> {
                   ),
                   SliverToBoxAdapter(
                     child: SpecialtyStrip(
-                      specialties:
-                          (state.doctors
-                              .expand((d) => d.specialties)
-                              .toSet()
-                              .toList()
-                            ..sort()),
+                      specialties: specialties,
                       selected: state.specialty,
                       onSelected: ref
                           .read(doctorsControllerProvider.notifier)
@@ -118,38 +165,23 @@ class _FindDoctorScreenState extends ConsumerState<FindDoctorScreen> {
                   ),
                   SliverPadding(
                     padding: const EdgeInsets.fromLTRB(
-                      AppSpacing.md,
                       AppSpacing.lg,
-                      AppSpacing.md,
+                      AppSpacing.lg,
+                      AppSpacing.lg,
                       AppSpacing.sm,
                     ),
                     sliver: SliverToBoxAdapter(
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              'Doctors',
-                              style: Theme.of(context).textTheme.titleMedium,
-                            ),
-                          ),
-                          IconButton(
-                            tooltip: 'Refresh doctors',
-                            onPressed: state.isLoading
-                                ? null
-                                : () => ref
-                                      .read(doctorsControllerProvider.notifier)
-                                      .load(refresh: true),
-                            icon: const Icon(Icons.refresh),
-                          ),
-                        ],
+                      child: Text(
+                        'Doctors',
+                        style: Theme.of(context).textTheme.titleLarge,
                       ),
                     ),
                   ),
                   SliverPadding(
                     padding: const EdgeInsets.fromLTRB(
-                      AppSpacing.md,
+                      AppSpacing.lg,
                       0,
-                      AppSpacing.md,
+                      AppSpacing.lg,
                       AppSpacing.lg,
                     ),
                     sliver: SliverToBoxAdapter(

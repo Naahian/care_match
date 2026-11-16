@@ -15,8 +15,10 @@ abstract final class AppRoutes {
   static const chat = 'chat';
   static const conversation = 'conversation';
   static const video = 'video';
+  static const videoCall = 'video-call';
   static const profile = 'profile';
   static const preferences = 'preferences';
+  static const about = 'about';
   static const notifications = 'notifications';
   static const doctorDashboard = 'doctor-dashboard';
   static const doctorQueue = 'doctor-queue';

@@ -2,6 +2,7 @@ class Doctor {
   Doctor({
     required this.id,
     this.name,
+    this.photoUrl,
     List<String> specialties = const [],
     List<String> degrees = const [],
     List<DoctorClinic> clinics = const [],
@@ -16,6 +17,7 @@ class Doctor {
 
   final String id;
   final String? name;
+  final String? photoUrl;
   final List<String> specialties;
   final List<String> degrees;
   final List<DoctorClinic> clinics;

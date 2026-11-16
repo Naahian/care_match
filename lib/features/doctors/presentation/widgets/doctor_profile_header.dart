@@ -1,6 +1,5 @@
 import 'package:care_match/core/constants/constants.dart';
 import 'package:flutter/material.dart';
-import 'package:sizer/sizer.dart';
 import 'package:care_match/shared/widgets/doctor_avatar.dart';
 import 'doctor_profile.dart';
 
@@ -13,84 +12,83 @@ class DoctorProfileHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        ClipRRect(
-          borderRadius: AppRadius.sheet,
-          child: SizedBox(
-            height: 20.h.clamp(120.0, 220.0),
-            child: Stack(
-              fit: StackFit.expand,
+    final areas = profile.careAreas.take(2).toList();
+    return Card(
+      child: Padding(
+        padding: AppSpacing.card,
+        child: Column(
+          children: [
+            Row(
               children: [
-                Image.asset(
-                  'assets/images/doctor_background.png',
-                  fit: BoxFit.cover,
-                  excludeFromSemantics: true,
-                ),
                 portrait ??
-                    (DoctorAvatar.assetFor(profile.summary.name) == null
-                        ? Center(
-                            child: DoctorAvatar(
-                              doctorName: profile.summary.name,
-                              radius: 48,
-                            ),
-                          )
-                        : Image.asset(
-                            DoctorAvatar.assetFor(profile.summary.name)!,
-                            fit: BoxFit.contain,
-                            excludeFromSemantics: true,
-                          )),
+                    DoctorAvatar(
+                      doctorName: profile.summary.name,
+                      photoUrl: profile.summary.photoUrl,
+                      radius: 52,
+                    ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        profile.summary.name,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.headlineSmall?.copyWith(
+                          color: scheme.onPrimaryContainer,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.sm,
+                          vertical: AppSpacing.xs + 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: scheme.secondaryContainer,
+                          borderRadius: AppRadius.chip,
+                        ),
+                        child: Text(
+                          profile.daysAvailable.length == 7
+                              ? '•  Available daily'
+                              : profile.summary.availability,
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: scheme.onSecondaryContainer,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
-          ),
+            const SizedBox(height: AppSpacing.md),
+            if (areas.isNotEmpty)
+              Row(
+                children: [
+                  for (final area in areas) ...[
+                    Expanded(
+                      child: Container(
+                        alignment: Alignment.center,
+                        padding: const EdgeInsets.symmetric(
+                          vertical: AppSpacing.sm,
+                        ),
+                        decoration: BoxDecoration(
+                          color: scheme.surfaceContainer,
+                          borderRadius: AppRadius.button,
+                        ),
+                        child: Text(area, style: theme.textTheme.labelSmall),
+                      ),
+                    ),
+                    if (area != areas.last)
+                      const SizedBox(width: AppSpacing.sm),
+                  ],
+                ],
+              ),
+          ],
         ),
-        const SizedBox(height: AppSpacing.md),
-        Text(
-          profile.summary.name,
-          textAlign: TextAlign.center,
-          style: theme.textTheme.headlineMedium?.copyWith(
-            color: scheme.onPrimaryContainer,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        const SizedBox(height: AppSpacing.xs),
-        Text(
-          profile.summary.specialty,
-          textAlign: TextAlign.center,
-          style: theme.textTheme.bodyLarge?.copyWith(
-            color: scheme.onSurfaceVariant,
-          ),
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        Wrap(
-          alignment: WrapAlignment.center,
-          spacing: AppSpacing.xs,
-          runSpacing: AppSpacing.xs,
-          children: profile.careAreas
-              .map(
-                (area) => Chip(
-                  label: Text(area),
-                  backgroundColor: scheme.primaryContainer,
-                  side: BorderSide.none,
-                  labelStyle: theme.textTheme.labelMedium?.copyWith(
-                    color: scheme.primary,
-                  ),
-                  shape: const RoundedRectangleBorder(
-                    borderRadius: AppRadius.chip,
-                  ),
-                ),
-              )
-              .toList(),
-        ),
-        const SizedBox(height: AppSpacing.md),
-        Text(
-          profile.biography,
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: scheme.onSurfaceVariant,
-          ),
-        ),
-      ],
+      ),
     );
   }
 }

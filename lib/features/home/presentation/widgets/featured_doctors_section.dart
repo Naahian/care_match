@@ -36,8 +36,8 @@ class FeaturedDoctorsSection extends StatelessWidget {
           children: [
             Expanded(
               child: Text(
-                'Featured Doctors',
-                style: theme.textTheme.titleMedium?.copyWith(
+                'Featured doctors',
+                style: theme.textTheme.titleLarge?.copyWith(
                   color: scheme.onPrimaryContainer,
                 ),
               ),
@@ -49,16 +49,16 @@ class FeaturedDoctorsSection extends StatelessWidget {
               child: Text(
                 'See all',
                 style: theme.textTheme.labelLarge?.copyWith(
-                  color: scheme.onSurfaceVariant,
+                  color: scheme.primary,
                 ),
               ),
             ),
           ],
         ),
-        const SizedBox(height: AppSpacing.sm),
+        const SizedBox(height: AppSpacing.xs),
         if (state.isLoading)
-          for (var i = 0; i < 5; i++) ...[
-            if (i > 0) const SizedBox(height: AppSpacing.md),
+          for (var i = 0; i < 2; i++) ...[
+            if (i > 0) const SizedBox(height: 10),
             const DoctorCardShimmer(),
           ],
         if (state.errorMessage != null) ...[
@@ -76,7 +76,10 @@ class FeaturedDoctorsSection extends StatelessWidget {
           if (i > 0) const SizedBox(height: AppSpacing.md),
           DoctorCard(
             doctor: _summary(i),
-            highlightAlt: i.isOdd,
+            featured: true,
+            highlightAlt: state.doctors[i].specialties.any(
+              (name) => name.toLowerCase() == 'dermatology',
+            ),
             onTap: () {
               context.pushNamed(
                 AppRoutes.doctorDetail,
@@ -95,6 +98,7 @@ class FeaturedDoctorsSection extends StatelessWidget {
     return directory.Doctor(
       id: doctor.id,
       name: doctor.name,
+      photoUrl: doctor.photoUrl,
       specialties: doctor.specialties,
       degrees: doctor.degrees,
       daysAvailable: doctor.daysAvailable,

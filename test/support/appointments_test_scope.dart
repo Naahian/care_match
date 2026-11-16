@@ -1,3 +1,5 @@
+import 'package:care_match/features/profile/account_profile_provider.dart';
+import 'package:care_match/features/profile/domain/entities/user_profile.dart';
 import 'package:care_match/features/appointments/domain/entities/appointment.dart';
 import 'package:care_match/features/appointments/domain/repositories/appointments_repository.dart';
 import 'package:care_match/features/appointments/providers.dart';
@@ -8,8 +10,15 @@ import 'package:care_match/features/doctors/providers.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-Widget appointmentsTestScope(Widget child) => ProviderScope(
+Widget appointmentsTestScope(
+  Widget child, {
+  AppointmentRole role = AppointmentRole.patient,
+}) => ProviderScope(
   overrides: [
+    accountProfileProvider.overrideWith(
+      (ref) async => UserProfile(role: role.name),
+    ),
+    appointmentRoleProvider.overrideWith((ref) async => role),
     appointmentsRepositoryProvider.overrideWithValue(
       TestAppointmentsRepository(),
     ),
@@ -25,6 +34,7 @@ Appointment testAppointment({
   String id = 'requested',
   String doctorId = 'emily',
   AppointmentStatus status = AppointmentStatus.requested,
+  AppointmentType type = AppointmentType.video,
   DateTime? scheduledFor,
 }) => Appointment(
   id: id,
@@ -32,6 +42,7 @@ Appointment testAppointment({
   patientId: 'patient',
   scheduledFor: scheduledFor ?? DateTime.utc(2030, 10, 17, 12),
   status: status,
+  type: type,
   reason: 'Follow-up visit',
   notes: 'Bring reports',
 );
@@ -54,8 +65,9 @@ class TestAppointmentsRepository implements AppointmentsRepository {
   ];
 
   @override
-  Future<List<Appointment>> getAppointments() async =>
-      List.unmodifiable(records);
+  Future<List<Appointment>> getAppointments({
+    AppointmentRole role = AppointmentRole.patient,
+  }) async => List.unmodifiable(records);
 
   @override
   Future<Appointment> updateStatus({
@@ -73,6 +85,9 @@ class TestAppointmentsRepository implements AppointmentsRepository {
       reason: old.reason,
       notes: old.notes,
       videoRoomId: old.videoRoomId,
+      type: old.type,
+      patientName: old.patientName,
+      patient: old.patient,
     );
   }
 }

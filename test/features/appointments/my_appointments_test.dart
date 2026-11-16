@@ -7,6 +7,7 @@ import 'package:care_match/core/theme/theme.dart';
 import 'package:care_match/features/appointments/data/models/appointment_model.dart';
 import 'package:care_match/features/appointments/data/repositories/appointments_repository_impl.dart';
 import 'package:care_match/features/appointments/domain/entities/appointment.dart';
+import 'package:care_match/features/appointments/domain/entities/patient_appointment.dart';
 import 'package:care_match/features/appointments/domain/repositories/appointments_repository.dart';
 import 'package:care_match/features/appointments/domain/usecases/get_patient_appointments.dart';
 import 'package:care_match/features/appointments/presentation/controllers/appointments_controller.dart';
@@ -19,6 +20,9 @@ import 'package:care_match/features/auth/providers.dart';
 import 'package:care_match/features/doctors/domain/entities/doctor.dart';
 import 'package:care_match/features/doctors/domain/repositories/doctors_repository.dart';
 import 'package:care_match/features/doctors/providers.dart';
+import 'package:care_match/features/profile/domain/entities/user_profile.dart';
+import 'package:care_match/features/profile/domain/repositories/profile_repository.dart';
+import 'package:care_match/features/profile/providers.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -43,6 +47,78 @@ Map<String, dynamic> _record({
 
 void main() {
   setUpAll(() => GoogleFonts.config.allowRuntimeFetching = false);
+
+  for (final type in AppointmentType.values) {
+    test('maps patient name and appointment type ${type.value}', () {
+      final item = AppointmentModel.fromJson(
+        _record()
+          ..['patient_name'] = 'Jane Doe'
+          ..['appointment_type'] = type.value,
+      );
+      expect(item.patientName, 'Jane Doe');
+      expect(item.type, type);
+      expect(
+        () => AppointmentModel.fromJson(
+          _record()..['appointment_type'] = 'phone',
+        ),
+        throwsFormatException,
+      );
+    });
+
+    for (final role in AppointmentRole.values) {
+      testWidgets('${role.name} card actions match ${type.value}', (
+        tester,
+      ) async {
+        var completed = false;
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: AppTheme.light,
+            home: Scaffold(
+              body: SingleChildScrollView(
+                child: PatientAppointmentCard(
+                  appointment: PatientAppointment(
+                    appointment: testAppointment(type: type),
+                  ),
+                  role: role,
+                  onJoinVideo: () {},
+                  onOpenChat: () {},
+                  onCancel: () {},
+                  onComplete: () => completed = true,
+                ),
+              ),
+            ),
+          ),
+        );
+        expect(
+          find.text('Join video consultation'),
+          type == AppointmentType.video ? findsOneWidget : findsNothing,
+        );
+        expect(
+          find.text('Open chat consultation'),
+          type == AppointmentType.chat ? findsOneWidget : findsNothing,
+        );
+        expect(
+          find.text(type.label),
+          role == AppointmentRole.doctor || type == AppointmentType.inPerson
+              ? findsOneWidget
+              : findsNothing,
+        );
+        expect(
+          find.text('Cancel appointment'),
+          role == AppointmentRole.doctor ? findsOneWidget : findsNothing,
+        );
+        expect(
+          find.text('Mark as completed'),
+          role == AppointmentRole.doctor ? findsOneWidget : findsNothing,
+        );
+        if (role == AppointmentRole.doctor) {
+          await tester.ensureVisible(find.text('Mark as completed'));
+          await tester.tap(find.text('Mark as completed'));
+          expect(completed, isTrue);
+        }
+      });
+    }
+  }
 
   group('API repository', () {
     late _Adapter adapter;
@@ -74,7 +150,33 @@ void main() {
       expect(item.notes, 'Bring reports');
       expect(item.videoRoomId, isNull);
       expect(item.status, AppointmentStatus.requested);
-      expect(item.canCancel, isTrue);
+      expect(item.isActive, isTrue);
+    });
+
+    test('GET doctor appointments sends one doctor role value', () async {
+      adapter.data = [
+        _record()
+          ..['patient'] = {
+            'uid': 'patient',
+            'display_name': 'Jane Doe',
+            'email': 'jane@example.com',
+            'phone_number': '+8801712345678',
+          },
+      ];
+      final item = (await repository.getAppointments(
+        role: AppointmentRole.doctor,
+      )).single;
+      expect(adapter.request!.queryParameters, {'role': 'doctor'});
+      expect(item.patient!.name, 'Jane Doe');
+      expect(item.patient!.email, 'jane@example.com');
+      expect(item.patient!.phoneNumber, '+8801712345678');
+      adapter.data = [
+        _record()..['patient'] = {'uid': 'someone-else'},
+      ];
+      await expectLater(
+        repository.getAppointments(role: AppointmentRole.doctor),
+        throwsA(isA<AppointmentsException>()),
+      );
     });
 
     test(
@@ -244,9 +346,14 @@ void main() {
     },
   );
 
-  ProviderContainer containerFor(_Repository repository, {_Doctors? doctors}) {
+  ProviderContainer containerFor(
+    _Repository repository, {
+    _Doctors? doctors,
+    AppointmentRole role = AppointmentRole.patient,
+  }) {
     final container = ProviderContainer.test(
       overrides: [
+        appointmentRoleProvider.overrideWith((ref) async => role),
         appointmentsRepositoryProvider.overrideWithValue(repository),
         doctorsRepositoryProvider.overrideWithValue(doctors ?? _Doctors()),
         authSessionProvider.overrideWith((ref) => const Stream.empty()),
@@ -255,6 +362,133 @@ void main() {
     container.listen(appointmentsControllerProvider, (_, _) {});
     return container;
   }
+
+  test(
+    'patient controller blocks cancellation and completion requests',
+    () async {
+      final repository = _Repository()..records = [testAppointment()];
+      final container = containerFor(repository);
+      final controller = container.read(
+        appointmentsControllerProvider.notifier,
+      );
+      await controller.load();
+      await controller.cancelAppointment('requested');
+      await controller.completeAppointment('requested');
+      expect(repository.updates, 0);
+      expect(
+        container
+            .read(appointmentsControllerProvider)
+            .appointments
+            .single
+            .appointment
+            .status,
+        AppointmentStatus.requested,
+      );
+    },
+  );
+
+  for (final type in AppointmentType.values) {
+    test(
+      'doctor controller completes ${type.value} and moves it to Completed',
+      () async {
+        final repository = TestAppointmentsRepository();
+        repository.records.clear();
+        repository.records.add(testAppointment(type: type));
+        final container = ProviderContainer.test(
+          overrides: [
+            appointmentRoleProvider.overrideWith(
+              (ref) async => AppointmentRole.doctor,
+            ),
+            appointmentsRepositoryProvider.overrideWithValue(repository),
+            doctorsRepositoryProvider.overrideWithValue(_Doctors()),
+            authSessionProvider.overrideWith((ref) => const Stream.empty()),
+          ],
+        );
+        container.listen(appointmentsControllerProvider, (_, _) {});
+        final controller = container.read(
+          appointmentsControllerProvider.notifier,
+        );
+        await controller.load();
+        await controller.completeAppointment('requested');
+        expect(
+          container.read(appointmentsControllerProvider).visibleAppointments,
+          isEmpty,
+        );
+        controller.selectFilter(AppointmentsFilter.completed);
+        final completed = container
+            .read(appointmentsControllerProvider)
+            .visibleAppointments
+            .single
+            .appointment;
+        expect(completed.status, AppointmentStatus.completed);
+        expect(completed.type, type);
+        await controller.completeAppointment('requested');
+        expect(
+          container.read(appointmentsControllerProvider).updateErrors,
+          isEmpty,
+        );
+      },
+    );
+  }
+
+  test('account profile determines the appointment query role', () async {
+    for (final role in ['patient', 'doctor']) {
+      final container = ProviderContainer.test(
+        overrides: [
+          profileRepositoryProvider.overrideWithValue(_Profiles(role)),
+          authSessionProvider.overrideWith((ref) => const Stream.empty()),
+        ],
+      );
+      expect((await container.read(appointmentRoleProvider.future)).name, role);
+    }
+  });
+
+  test(
+    'doctor load skips doctor directory and preserves patient details on cancellation',
+    () async {
+      final patient = AppointmentModel.fromJson(
+        _record()..['patient'] = {'uid': 'patient', 'display_name': 'Jane Doe'},
+      );
+      final repository = _Repository()..records = [patient];
+      final doctors = _Doctors()..error = const DoctorsException('Offline');
+      final container = ProviderContainer.test(
+        overrides: [
+          appointmentRoleProvider.overrideWith(
+            (ref) async => AppointmentRole.doctor,
+          ),
+          appointmentsRepositoryProvider.overrideWithValue(repository),
+          doctorsRepositoryProvider.overrideWithValue(doctors),
+          authSessionProvider.overrideWith((ref) => const Stream.empty()),
+        ],
+      );
+      container.listen(appointmentsControllerProvider, (_, _) {});
+      final controller = container.read(
+        appointmentsControllerProvider.notifier,
+      );
+      await controller.load();
+      expect(repository.lastRole, AppointmentRole.doctor);
+      expect(
+        container.read(appointmentsControllerProvider).role,
+        AppointmentRole.doctor,
+      );
+      expect(doctors.calls, 0);
+      expect(
+        container.read(appointmentsControllerProvider).doctorDetailsUnavailable,
+        isFalse,
+      );
+      await controller.cancelAppointment('appointment');
+      expect(
+        container
+            .read(appointmentsControllerProvider)
+            .appointments
+            .single
+            .appointment
+            .patient!
+            .name,
+        'Jane Doe',
+      );
+    },
+  );
 
   test(
     'controller handles loading, retries and ordered status filters',
@@ -267,6 +501,7 @@ void main() {
       );
       final first = controller.load();
       await controller.load();
+      await container.pump();
       expect(repository.loads, 1);
       expect(container.read(appointmentsControllerProvider).isLoading, isTrue);
       repository.pendingLoad!.completeError(
@@ -318,7 +553,7 @@ void main() {
       final repository = _Repository()
         ..records = [testAppointment()]
         ..pendingUpdate = Completer<Appointment>();
-      final container = containerFor(repository);
+      final container = containerFor(repository, role: AppointmentRole.doctor);
       final controller = container.read(
         appointmentsControllerProvider.notifier,
       );
@@ -367,9 +602,9 @@ void main() {
             .read(appointmentsControllerProvider)
             .visibleAppointments
             .single
-            .doctor!
-            .name,
-        'Dr. Emily Carter',
+            .appointment
+            .status,
+        AppointmentStatus.cancelled,
       );
       expect(
         container.read(appointmentsControllerProvider).updateErrors,
@@ -387,7 +622,7 @@ void main() {
           'Refresh first',
           mayHaveSucceeded: true,
         );
-      final container = containerFor(repository);
+      final container = containerFor(repository, role: AppointmentRole.doctor);
       final controller = container.read(
         appointmentsControllerProvider.notifier,
       );
@@ -414,6 +649,9 @@ void main() {
       final repository = _Repository();
       final container = ProviderContainer.test(
         overrides: [
+          appointmentRoleProvider.overrideWith(
+            (ref) async => AppointmentRole.patient,
+          ),
           appointmentsRepositoryProvider.overrideWithValue(repository),
           doctorsRepositoryProvider.overrideWithValue(_Doctors()),
           authSessionProvider.overrideWith((ref) => sessions.stream),
@@ -449,6 +687,9 @@ void main() {
       ..pendingUpdate = Completer<Appointment>();
     final container = ProviderContainer.test(
       overrides: [
+        appointmentRoleProvider.overrideWith(
+          (ref) async => AppointmentRole.doctor,
+        ),
         appointmentsRepositoryProvider.overrideWithValue(repository),
         doctorsRepositoryProvider.overrideWithValue(_Doctors()),
         authSessionProvider.overrideWith((ref) => sessions.stream),
@@ -473,7 +714,59 @@ void main() {
   });
 
   testWidgets(
-    'screen confirms cancellation and moves server record into Cancelled',
+    'doctor cards show patient contact details and patient cards omit them',
+    (tester) async {
+      final appointment = AppointmentModel.fromJson(
+        _record()
+          ..['patient_name'] = 'Jane Doe'
+          ..['patient'] = {
+            'uid': 'patient',
+            'display_name': 'Jane Doe',
+            'email': 'jane@example.com',
+            'phone_number': '+8801712345678',
+          },
+      );
+      for (final role in AppointmentRole.values) {
+        await tester.pumpWidget(
+          ProviderScope(
+            key: ValueKey(role),
+            overrides: [
+              appointmentRoleProvider.overrideWith((ref) async => role),
+              appointmentsRepositoryProvider.overrideWithValue(
+                _Repository()..records = [appointment],
+              ),
+              doctorsRepositoryProvider.overrideWithValue(_Doctors()),
+              authSessionProvider.overrideWith((ref) => const Stream.empty()),
+            ],
+            child: MaterialApp(
+              theme: AppTheme.light,
+              home: const MyAppointmentsScreen(),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(
+          find.text('Jane Doe'),
+          role == AppointmentRole.doctor ? findsOneWidget : findsNothing,
+        );
+        expect(
+          find.text('Email: jane@example.com'),
+          role == AppointmentRole.doctor ? findsOneWidget : findsNothing,
+        );
+        expect(
+          find.text('Phone: +8801712345678'),
+          role == AppointmentRole.doctor ? findsOneWidget : findsNothing,
+        );
+        expect(
+          find.text('Dr. Emily Carter'),
+          role == AppointmentRole.patient ? findsOneWidget : findsNothing,
+        );
+      }
+    },
+  );
+
+  testWidgets(
+    'doctor confirms completion and moves server record into Completed',
     (tester) async {
       await tester.binding.setSurfaceSize(const Size(800, 2000));
       addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -483,31 +776,32 @@ void main() {
             theme: AppTheme.light,
             home: const MyAppointmentsScreen(),
           ),
+          role: AppointmentRole.doctor,
         ),
       );
       await tester.pumpAndSettle();
       expect(find.byType(PatientAppointmentCard), findsNWidgets(3));
       expect(find.text('Requested'), findsNWidgets(2));
       expect(find.text('Confirmed'), findsOneWidget);
-      await tester.tap(find.text('Cancel appointment').first);
+      await tester.tap(find.text('Mark as completed').first);
       await tester.pumpAndSettle();
       await tester.tap(find.text('Keep appointment'));
       await tester.pumpAndSettle();
       expect(find.byType(PatientAppointmentCard), findsNWidgets(3));
-      await tester.tap(find.text('Cancel appointment').first);
+      await tester.tap(find.text('Mark as completed').first);
       await tester.pumpAndSettle();
       await tester.tap(
         find.descendant(
           of: find.byType(AlertDialog),
-          matching: find.text('Cancel appointment'),
+          matching: find.text('Mark as completed'),
         ),
       );
       await tester.pumpAndSettle();
       expect(find.byType(PatientAppointmentCard), findsNWidgets(2));
-      await tester.tap(find.widgetWithText(ChoiceChip, 'Cancelled'));
+      await tester.tap(find.widgetWithText(ChoiceChip, 'Completed'));
       await tester.pumpAndSettle();
-      expect(find.text('Dr. Emily Carter'), findsOneWidget);
-      expect(find.text('Cancel appointment'), findsNothing);
+      expect(find.text('Completed'), findsNWidgets(3));
+      expect(find.text('Mark as completed'), findsNothing);
     },
   );
 
@@ -519,6 +813,9 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
+            appointmentRoleProvider.overrideWith(
+              (ref) async => AppointmentRole.patient,
+            ),
             appointmentsRepositoryProvider.overrideWithValue(repository),
             doctorsRepositoryProvider.overrideWithValue(_Doctors()),
             authSessionProvider.overrideWith((ref) => const Stream.empty()),
@@ -549,9 +846,13 @@ class _Repository implements AppointmentsRepository {
   Completer<Appointment>? pendingUpdate;
   int loads = 0;
   int updates = 0;
+  AppointmentRole? lastRole;
   @override
-  Future<List<Appointment>> getAppointments() async {
+  Future<List<Appointment>> getAppointments({
+    AppointmentRole role = AppointmentRole.patient,
+  }) async {
     loads++;
+    lastRole = role;
     if (error != null) throw error!;
     return pendingLoad?.future ?? records;
   }
@@ -566,6 +867,18 @@ class _Repository implements AppointmentsRepository {
     return pendingUpdate?.future ??
         testAppointment(id: appointmentId, status: status);
   }
+}
+
+class _Profiles implements ProfileRepository {
+  _Profiles(this.role);
+  final String role;
+
+  @override
+  Future<UserProfile> getProfile() async => UserProfile(role: role);
+
+  @override
+  Future<UserProfile> updateProfile(ProfileUpdate update) =>
+      throw UnimplementedError();
 }
 
 class _Doctors implements DoctorsRepository {

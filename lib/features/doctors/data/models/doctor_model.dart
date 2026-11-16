@@ -4,6 +4,7 @@ class DoctorModel extends Doctor {
   DoctorModel({
     required super.id,
     super.name,
+    super.photoUrl,
     super.specialties,
     super.degrees,
     super.clinics,
@@ -43,6 +44,7 @@ class DoctorModel extends Doctor {
     return DoctorModel(
       id: requiredText(json['uid']),
       name: text(json['display_name']),
+      photoUrl: _photoUrl(json['photo_url']),
       specialties: list('specialties', requiredText),
       degrees: list('degrees', requiredText),
       daysAvailable: list('days_available', requiredText),
@@ -67,4 +69,14 @@ class DoctorModel extends Doctor {
       verified: verified as bool? ?? false,
     );
   }
+}
+
+String? _photoUrl(Object? value) {
+  if (value is! String) return null;
+  final uri = Uri.tryParse(value.trim());
+  return uri != null &&
+          uri.hasAuthority &&
+          ['https', 'http'].contains(uri.scheme)
+      ? value.trim()
+      : null;
 }

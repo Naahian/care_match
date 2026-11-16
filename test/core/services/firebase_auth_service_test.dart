@@ -46,6 +46,24 @@ void main() {
     },
   );
 
+  test('invalid refresh credentials sign out, network errors do not', () async {
+    final user = _TokenUser();
+    auth.user = user;
+    user.error = FirebaseAuthException(code: 'network-request-failed');
+    await expectLater(
+      service.getIdToken(forceRefresh: true),
+      throwsA(isA<FirebaseAuthException>()),
+    );
+    expect(auth.signOuts, 0);
+    user.error = FirebaseAuthException(code: 'user-token-expired');
+    await expectLater(
+      service.getIdToken(forceRefresh: true),
+      throwsA(isA<FirebaseAuthException>()),
+    );
+    expect(auth.signOuts, 1);
+    expect(auth.currentUser, isNull);
+  });
+
   test('SMS sign-in combines the verification ID and trimmed code', () async {
     await service.signInWithSmsCode(
       verificationId: 'verification-id',
@@ -63,8 +81,15 @@ class _FakeFirebaseAuth implements FirebaseAuth {
   AuthCredential? credential;
   FirebaseAuthException? signInError;
 
+  User? user;
+  int signOuts = 0;
   @override
-  User? get currentUser => null;
+  User? get currentUser => user;
+  @override
+  Future<void> signOut() async {
+    signOuts++;
+    user = null;
+  }
 
   @override
   Future<UserCredential> signInWithEmailAndPassword({
@@ -88,6 +113,20 @@ class _FakeFirebaseAuth implements FirebaseAuth {
 }
 
 class _FakeUserCredential implements UserCredential {
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+class _TokenUser implements User {
+  FirebaseAuthException? error;
+  @override
+  String get uid => 'user';
+  @override
+  Future<String?> getIdToken([bool forceRefresh = false]) async {
+    if (error != null) throw error!;
+    return 'token';
+  }
+
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }

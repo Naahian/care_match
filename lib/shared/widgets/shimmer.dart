@@ -49,9 +49,9 @@ class _ShimmerState extends State<Shimmer> with SingleTickerProviderStateMixin {
                 begin: Alignment(-3 + 6 * _controller.value, 0),
                 end: Alignment(-1 + 6 * _controller.value, 0),
                 colors: [
-                  scheme.surfaceContainerHighest,
-                  scheme.surfaceContainerLow,
-                  scheme.surfaceContainerHighest,
+                  scheme.surfaceContainer,
+                  scheme.surfaceContainerHigh.withAlpha(50),
+                  scheme.surfaceContainer,
                 ],
               ).createShader(bounds),
               child: child,

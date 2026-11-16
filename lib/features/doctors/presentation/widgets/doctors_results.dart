@@ -37,7 +37,10 @@ class DoctorsResults extends StatelessWidget {
         for (final doctor in doctors) ...[
           DoctorCard(
             doctor: doctor.summary,
-            highlightAlt: false,
+            directoryStyle: true,
+            highlightAlt: doctor.specialties.any(
+              (name) => name.toLowerCase() == 'dermatology',
+            ),
             onTap: () => context.pushNamed(
               AppRoutes.doctorDetail,
               pathParameters: {'doctorId': doctor.id},

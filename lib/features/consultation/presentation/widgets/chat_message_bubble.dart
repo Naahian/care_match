@@ -12,45 +12,52 @@ class ChatMessageBubble extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final foreground = message.isFromPatient
-        ? scheme.onPrimary
-        : scheme.onSurface;
+    final foreground = message.isMine ? scheme.onPrimary : scheme.onSurface;
 
     return Align(
-      alignment: message.isFromPatient
-          ? Alignment.centerRight
-          : Alignment.centerLeft,
-      child: FractionallySizedBox(
-        widthFactor: 0.85,
-        child: Container(
-          padding: AppSpacing.card,
-          decoration: BoxDecoration(
-            color: message.isFromPatient ? scheme.primary : scheme.surface,
-            borderRadius: AppRadius.card,
-            border: message.isFromPatient
-                ? null
-                : Border.all(color: scheme.outlineVariant),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                message.text,
-                style: theme.textTheme.bodyMedium?.copyWith(color: foreground),
+      alignment: message.isMine ? Alignment.centerRight : Alignment.centerLeft,
+      child: LayoutBuilder(
+        builder: (context, constraints) => ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: constraints.maxWidth * .85),
+          child: Container(
+            padding: AppSpacing.card,
+            decoration: BoxDecoration(
+              color: message.isMine ? scheme.primary : scheme.surface,
+              borderRadius: BorderRadius.only(
+                topLeft: const Radius.circular(20),
+                topRight: const Radius.circular(20),
+                bottomLeft: Radius.circular(message.isMine ? 20 : 5),
+                bottomRight: Radius.circular(message.isMine ? 5 : 20),
               ),
-              const SizedBox(height: AppSpacing.sm),
-              Align(
-                alignment: Alignment.centerRight,
-                child: Text(
-                  message.time,
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: message.isFromPatient
-                        ? scheme.onPrimary
-                        : scheme.onSurfaceVariant,
+              border: message.isMine
+                  ? null
+                  : Border.all(color: scheme.outlineVariant),
+            ),
+            child: IntrinsicWidth(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    message.text,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: foreground,
+                    ),
                   ),
-                ),
+                  const SizedBox(height: AppSpacing.sm),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: Text(
+                      message.time,
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: message.isMine
+                            ? scheme.onPrimary
+                            : scheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),

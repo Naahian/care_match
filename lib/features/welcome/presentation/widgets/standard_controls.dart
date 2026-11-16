@@ -27,11 +27,15 @@ class StandardControls extends StatelessWidget {
           width: double.infinity,
           child: FilledButton(
             onPressed: onNext,
+            style: FilledButton.styleFrom(
+              minimumSize: const Size(0, 56),
+              shape: const RoundedRectangleBorder(borderRadius: AppRadius.card),
+            ),
             child: const Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text('Next'),
-                SizedBox(width: AppSpacing.sm),
+                SizedBox(width: 20),
+                Expanded(child: Text('Next', textAlign: TextAlign.center)),
                 Icon(Icons.arrow_forward_rounded, size: 20),
               ],
             ),

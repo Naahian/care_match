@@ -1,7 +1,5 @@
 import 'package:care_match/core/constants/constants.dart';
-import 'package:care_match/core/theme/theme.dart';
 import 'package:flutter/material.dart';
-import 'package:sizer/sizer.dart';
 import 'package:care_match/shared/widgets/doctor_avatar.dart';
 
 import 'conversation.dart';
@@ -24,92 +22,52 @@ class ConversationCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final extras = theme.extension<AppExtras>()!;
 
     final muted = theme.textTheme.bodyMedium?.copyWith(
       color: scheme.onSurfaceVariant,
     );
-    final videoSize = 10.w.clamp(34.0, 44.0);
-
     return Card(
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
         child: Padding(
           padding: AppSpacing.card,
-          child: Row(
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Avatar + timestamp.
-              Column(
-                mainAxisSize: MainAxisSize.min,
+              Row(
                 children: [
                   DoctorAvatar(
-                    doctorName: conversation.doctorName,
-                    radius: 10.w.clamp(28.0, 42.0),
+                    doctorName: conversation.peerName,
+                    photoUrl: conversation.photoUrl,
+                    radius: 28,
                   ),
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(conversation.time, style: theme.textTheme.bodySmall),
-                ],
-              ),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Flexible(
-                          child: Text(
-                            conversation.doctorName,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.titleSmall?.copyWith(
-                              color: scheme.onPrimaryContainer,
-                            ),
-                          ),
+                        Text(
+                          conversation.peerName,
+                          style: theme.textTheme.titleSmall,
                         ),
-                        if (conversation.isOnline) ...[
-                          const SizedBox(width: AppSpacing.sm),
-                          Container(
-                            width: 8,
-                            height: 8,
-                            decoration: BoxDecoration(
-                              color: extras.success,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                        ],
+                        const SizedBox(height: AppSpacing.xs),
+                        Text(
+                          conversation.time,
+                          style: theme.textTheme.bodySmall,
+                        ),
                       ],
                     ),
-                    const SizedBox(height: AppSpacing.xs),
-                    Text(
-                      conversation.specialty,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: muted,
-                    ),
-                    const SizedBox(height: AppSpacing.xs),
-                    Text(
-                      conversation.lastMessage,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: muted,
-                    ),
-                  ],
-                ),
+                  ),
+                  Icon(Icons.chevron_right, color: scheme.primary),
+                ],
               ),
-              const SizedBox(width: AppSpacing.sm),
-              IconButton.filled(
-                onPressed: onVideoTap,
-                tooltip: 'Start video consult',
-                iconSize: 15.sp,
-                style: IconButton.styleFrom(
-                  minimumSize: Size.square(videoSize),
-                  maximumSize: Size.square(videoSize),
-                  padding: EdgeInsets.zero,
-                ),
-                icon: const Icon(Icons.videocam_rounded),
+              const SizedBox(height: AppSpacing.md),
+              Text(
+                conversation.lastMessage,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: muted,
               ),
             ],
           ),

@@ -20,10 +20,17 @@ class AppointmentPaymentMethodCard extends StatelessWidget {
       selected: selected,
       button: true,
       child: Card(
+        color: selected
+            ? Color.alphaBlend(
+                scheme.primary.withValues(alpha: .12),
+                scheme.surface,
+              )
+            : scheme.surface,
         shape: RoundedRectangleBorder(
           borderRadius: AppRadius.card,
           side: BorderSide(
             color: selected ? scheme.primary : scheme.outlineVariant,
+            width: selected ? 1.5 : 1,
           ),
         ),
         clipBehavior: Clip.antiAlias,
@@ -40,7 +47,7 @@ class AppointmentPaymentMethodCard extends StatelessWidget {
             selected
                 ? Icons.radio_button_checked_rounded
                 : Icons.radio_button_unchecked_rounded,
-            color: scheme.primary,
+            color: selected ? scheme.primary : scheme.outline,
           ),
         ),
       ),

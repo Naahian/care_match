@@ -11,11 +11,13 @@ class AppointmentsRepositoryImpl implements AppointmentsRepository {
   final Dio dio;
 
   @override
-  Future<List<Appointment>> getAppointments() async {
+  Future<List<Appointment>> getAppointments({
+    AppointmentRole role = AppointmentRole.patient,
+  }) async {
     try {
       final response = await dio.get<Object?>(
         ApiEndpoints.appointments,
-        queryParameters: {'role': 'patient'},
+        queryParameters: {'role': role.name},
       );
       final data = ApiResponse.fromJson(response.data).data;
       if (data is! List) {

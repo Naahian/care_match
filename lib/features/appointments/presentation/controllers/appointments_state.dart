@@ -14,6 +14,7 @@ class AppointmentsState {
     this.updatingIds = const {},
     this.updateErrors = const {},
     this.uncertainIds = const {},
+    this.role = AppointmentRole.patient,
   });
 
   final List<PatientAppointment> appointments;
@@ -25,12 +26,13 @@ class AppointmentsState {
   final Set<String> updatingIds;
   final Map<String, String> updateErrors;
   final Set<String> uncertainIds;
+  final AppointmentRole role;
 
   List<PatientAppointment> get visibleAppointments {
     final items = appointments
         .where(
           (entry) => switch (filter) {
-            AppointmentsFilter.upcoming => entry.appointment.canCancel,
+            AppointmentsFilter.upcoming => entry.appointment.isActive,
             AppointmentsFilter.completed =>
               entry.appointment.status == AppointmentStatus.completed,
             AppointmentsFilter.cancelled =>
@@ -57,6 +59,7 @@ class AppointmentsState {
     Set<String>? updatingIds,
     Map<String, String>? updateErrors,
     Set<String>? uncertainIds,
+    AppointmentRole? role,
   }) => AppointmentsState(
     appointments: appointments ?? this.appointments,
     filter: filter ?? this.filter,
@@ -68,5 +71,6 @@ class AppointmentsState {
     updatingIds: updatingIds ?? this.updatingIds,
     updateErrors: updateErrors ?? this.updateErrors,
     uncertainIds: uncertainIds ?? this.uncertainIds,
+    role: role ?? this.role,
   );
 }

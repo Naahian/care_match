@@ -1,3 +1,4 @@
+import 'package:care_match/features/profile/presentation/screens/my_profile_screen.dart';
 import 'support/doctors_test_scope.dart';
 import 'support/auth_test_scope.dart';
 import 'package:care_match/core/constants/app_routes.dart';
@@ -8,6 +9,7 @@ import 'package:care_match/features/profile/presentation/screens/set_up_profile_
 import 'package:care_match/features/auth/presentation/screens/verify_number_screen.dart';
 import 'package:care_match/features/consultation/presentation/screens/chat_list_screen.dart';
 import 'package:care_match/features/consultation/presentation/screens/video_onboarding_screen.dart';
+import 'package:care_match/features/consultation/presentation/screens/video_call_screen.dart';
 import 'package:care_match/features/doctors/presentation/screens/doctor_detail_screen.dart';
 import 'package:care_match/features/doctors/presentation/screens/doctor_search_screen.dart';
 import 'package:care_match/shared/widgets/doctor_card.dart';
@@ -21,6 +23,28 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:sizer/sizer.dart';
 
 void main() {
+  testWidgets('session loss redirects protected routes to login', (
+    tester,
+  ) async {
+    final session = ValueNotifier(true);
+    final router = createAppRouter(
+      initialLocation: '/profile',
+      isSignedIn: () => session.value,
+      refreshListenable: session,
+    );
+    addTearDown(router.dispose);
+    addTearDown(session.dispose);
+    await tester.pumpWidget(
+      _routerTestScope(Sizer(builder: (_, _, _) => MyApp(router: router))),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byType(MyProfileScreen), findsOneWidget);
+    session.value = false;
+    await tester.pumpAndSettle();
+    expect(find.byType(LoginScreen), findsOneWidget);
+    expect(router.canPop(), isFalse);
+  });
+
   setUpAll(() => GoogleFonts.config.allowRuntimeFetching = false);
 
   final destinations = <String, Type>{
@@ -91,6 +115,37 @@ void main() {
       await tester.pumpWidget(const SizedBox());
     });
   }
+
+  testWidgets(
+    'Video onboarding starts the call with the selected appointment ID',
+    (tester) async {
+      final router = createAppRouter(
+        initialLocation: '/consultation/video?appointmentId=appointment-123',
+      );
+      addTearDown(router.dispose);
+      await tester.pumpWidget(
+        _routerTestScope(Sizer(builder: (_, _, _) => MyApp(router: router))),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Join Consultation'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(VideoCallScreen), findsOneWidget);
+      expect(
+        tester
+            .widget<VideoCallScreen>(find.byType(VideoCallScreen))
+            .appointmentId,
+        'appointment-123',
+      );
+      expect(
+        find.text(
+          'Add the Agora App ID to AppConstants.agoraAppId before joining.',
+        ),
+        findsOneWidget,
+      );
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
 
   testWidgets(
     'Doctor selection preserves the doctor and supports back navigation',

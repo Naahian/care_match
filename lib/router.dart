@@ -22,15 +22,17 @@ import 'features/profile/presentation/screens/set_up_profile_screen.dart';
 import 'features/auth/presentation/screens/verify_number_screen.dart';
 import 'features/consultation/presentation/screens/chat_list_screen.dart';
 import 'features/consultation/presentation/screens/conversation_screen.dart';
-import 'features/consultation/presentation/widgets/conversation.dart';
+import 'features/consultation/presentation/screens/video_call_screen.dart';
 import 'features/consultation/presentation/screens/video_onboarding_screen.dart';
+import 'features/consultation/presentation/widgets/upcoming_consultation.dart';
 import 'features/doctors/presentation/screens/doctor_detail_screen.dart';
 import 'features/doctors/presentation/screens/doctor_search_screen.dart';
 import 'features/doctors/presentation/widgets/doctor_profile.dart';
-import 'features/home/presentation/home_screen.dart';
+import 'features/home/presentation/role_home_screen.dart';
 import 'features/welcome/presentation/onboarding.dart';
 import 'features/profile/presentation/screens/my_profile_screen.dart';
 import 'features/settings/presentation/screens/preferences_screen.dart';
+import 'features/settings/presentation/screens/about_screen.dart';
 import 'features/notifications/presentation/screens/notifications_screen.dart';
 import 'features/records/presentation/screens/my_reports_screen.dart';
 import 'features/appointments/presentation/screens/my_appointments_screen.dart';
@@ -78,6 +80,12 @@ GoRouter createAppRouter({
       '/auth/create-account',
       '/auth/forgot-password',
     }.contains(state.uri.path);
+    if (isSignedIn != null &&
+        !isSignedIn() &&
+        !entryRoute &&
+        state.uri.path != '/auth/verify-number') {
+      return '/auth/login';
+    }
     return entryRoute && (isSignedIn?.call() ?? false) ? '/home' : null;
   },
   routes: [
@@ -85,18 +93,11 @@ GoRouter createAppRouter({
       path: '/consultation/chat/conversation',
       name: AppRoutes.conversation,
       builder: (_, state) {
-        final doctor = state.uri.queryParameters['doctor'];
-        final matches = sampleConversations.where(
-          (conversation) => conversation.doctorName == doctor,
-        );
-        if (doctor != null && matches.isEmpty) {
+        final chatId = state.uri.queryParameters['chatId'];
+        if (chatId == null || !RegExp(r'^[a-f0-9]{64}$').hasMatch(chatId)) {
           return const _RouteNotFound(message: 'Conversation not found');
         }
-        return ConversationScreen(
-          conversation: matches.isEmpty
-              ? sampleConversations.first
-              : matches.first,
-        );
+        return ConversationScreen(chatId: chatId);
       },
     ),
     GoRoute(
@@ -128,6 +129,11 @@ GoRouter createAppRouter({
       path: '/settings',
       name: AppRoutes.preferences,
       builder: (_, _) => const PreferencesScreen(),
+    ),
+    GoRoute(
+      path: '/about',
+      name: AppRoutes.about,
+      builder: (_, _) => const AboutScreen(),
     ),
     GoRoute(
       path: '/symptoms',
@@ -200,7 +206,7 @@ GoRouter createAppRouter({
     GoRoute(
       path: '/home',
       name: AppRoutes.home,
-      builder: (_, _) => const HomeScreen(),
+      builder: (_, _) => const RoleHomeScreen(),
     ),
     GoRoute(
       path: '/doctors',
@@ -283,12 +289,25 @@ GoRouter createAppRouter({
     GoRoute(
       path: '/consultation/chat',
       name: AppRoutes.chat,
-      builder: (_, _) => const ChatListScreen(),
+      builder: (_, state) =>
+          ChatListScreen(recipientUid: state.uri.queryParameters['recipient']),
     ),
     GoRoute(
       path: '/consultation/video',
       name: AppRoutes.video,
-      builder: (_, _) => const VideoOnboardingScreen(),
+      builder: (_, state) => VideoOnboardingScreen(
+        appointmentId: state.uri.queryParameters['appointmentId'],
+        consultation: state.extra is UpcomingConsultation
+            ? state.extra! as UpcomingConsultation
+            : null,
+      ),
+    ),
+    GoRoute(
+      path: '/consultation/video/call/:appointmentId',
+      name: AppRoutes.videoCall,
+      builder: (_, state) => VideoCallScreen(
+        appointmentId: state.pathParameters['appointmentId']!,
+      ),
     ),
   ],
   errorBuilder: (_, _) => const _RouteNotFound(message: 'Page not found'),

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/constants/app_routes.dart';
 import '../../core/constants/constants.dart';
+import '../../core/localization/app_localizations.dart';
 import '../../features/auth/providers.dart';
 
 class LogoutTile extends StatelessWidget {
@@ -13,6 +14,7 @@ class LogoutTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    final l10n = AppLocalizations.of(context);
     return Card(
       clipBehavior: Clip.antiAlias,
       child: ListTile(
@@ -23,11 +25,11 @@ class LogoutTile extends StatelessWidget {
           child: const Icon(Icons.logout_rounded),
         ),
         title: Text(
-          'Log out',
+          l10n.text('Log out'),
           style: theme.textTheme.titleSmall?.copyWith(color: scheme.error),
         ),
         subtitle: Text(
-          'Sign out of your account',
+          l10n.text('Sign out of your account'),
           style: theme.textTheme.bodySmall,
         ),
         trailing: Icon(Icons.chevron_right_rounded, color: scheme.error),

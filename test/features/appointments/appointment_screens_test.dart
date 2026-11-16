@@ -1,3 +1,5 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:care_match/features/auth/providers.dart';
 import 'package:care_match/features/doctors/domain/entities/doctor.dart';
 import '../../support/doctors_test_scope.dart';
 import 'package:care_match/core/theme/theme.dart';
@@ -8,13 +10,11 @@ import 'package:care_match/features/appointments/presentation/screens/appointmen
 import 'package:care_match/features/appointments/presentation/screens/appointment_confirmation_screen.dart';
 import 'package:care_match/features/appointments/presentation/widgets/consultation_type_card.dart';
 import 'package:care_match/features/doctors/presentation/widgets/doctor_profile.dart';
-import 'package:care_match/core/constants/app_routes.dart';
 import 'package:care_match/main.dart';
 import 'package:care_match/router.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:go_router/go_router.dart';
 import 'package:sizer/sizer.dart';
 
 final bookingProfile = DoctorProfile(
@@ -56,7 +56,7 @@ void main() {
         AppointmentConfirmationScreen(draft: booking),
       ]) {
         await tester.pumpWidget(
-          Sizer(
+          _scope(
             builder: (_, _, _) => MaterialApp(
               theme: size.width > 600 ? AppTheme.dark : AppTheme.light,
               builder: (context, child) => MediaQuery(
@@ -84,7 +84,7 @@ void main() {
     final router = createAppRouter(initialLocation: '/doctors/dr-emily-carter');
     addTearDown(router.dispose);
     await tester.pumpWidget(
-      doctorsTestScope(Sizer(builder: (_, _, _) => MyApp(router: router))),
+      doctorsTestScope(_scope(builder: (_, _, _) => MyApp(router: router))),
     );
     await tester.pumpAndSettle();
     router.go('/doctors/dr-emily-carter', extra: bookingProfile);
@@ -125,7 +125,13 @@ void main() {
     await tester.scrollUntilVisible(
       find.text(slotLabel),
       200,
-      scrollable: find.byType(Scrollable).last,
+      scrollable: find
+          .byWidgetPredicate(
+            (widget) =>
+                widget is Scrollable &&
+                widget.axisDirection == AxisDirection.down,
+          )
+          .last,
     );
     await tester.pumpAndSettle();
     await tester.tap(find.text(slotLabel));
@@ -139,7 +145,13 @@ void main() {
     await tester.scrollUntilVisible(
       find.text('bKash'),
       200,
-      scrollable: find.byType(Scrollable).last,
+      scrollable: find
+          .byWidgetPredicate(
+            (widget) =>
+                widget is Scrollable &&
+                widget.axisDirection == AxisDirection.down,
+          )
+          .last,
     );
     await tester.pumpAndSettle();
     expect(find.text('Google Pay'), findsNothing);
@@ -154,44 +166,33 @@ void main() {
   });
 
   testWidgets(
-    'Pay & confirm opens appointment confirmation with the same draft',
+    'Pay & confirm validates billing and does not claim payment succeeded',
     (tester) async {
-      final booking = draft()..paymentMethod = AppointmentPaymentMethod.bkash;
-      final router = GoRouter(
-        routes: [
-          GoRoute(
-            path: '/',
-            builder: (_, _) => AppointmentPaymentScreen(draft: booking),
-          ),
-          GoRoute(
-            path: '/appointments/:doctorId/confirmation',
-            name: AppRoutes.appointmentConfirmation,
-            builder: (_, state) {
-              expect(state.pathParameters['doctorId'], booking.doctor.routeId);
-              expect(state.extra, same(booking));
-              return AppointmentConfirmationScreen(
-                draft: state.extra! as AppointmentDraft,
-              );
-            },
-          ),
-        ],
-      );
-      addTearDown(router.dispose);
       await tester.pumpWidget(
-        Sizer(
-          builder: (_, _, _) =>
-              MaterialApp.router(theme: AppTheme.light, routerConfig: router),
+        _scope(
+          builder: (_, _, _) => MaterialApp(
+            theme: AppTheme.light,
+            home: AppointmentPaymentScreen(draft: draft()),
+          ),
         ),
       );
       await tester.pumpAndSettle();
       await tester.tap(find.text('Pay & confirm'));
       await tester.pumpAndSettle();
-      final confirmation = tester.widget<AppointmentConfirmationScreen>(
-        find.byType(AppointmentConfirmationScreen),
+      expect(find.byType(AppointmentConfirmationScreen), findsNothing);
+      expect(find.byType(AppointmentPaymentScreen), findsOneWidget);
+      await tester.scrollUntilVisible(
+        find.text('Enter your name'),
+        200,
+        scrollable: find
+            .byWidgetPredicate(
+              (widget) =>
+                  widget is Scrollable &&
+                  widget.axisDirection == AxisDirection.down,
+            )
+            .last,
       );
-      expect(confirmation.draft, same(booking));
-      expect(confirmation.draft.paymentMethod, AppointmentPaymentMethod.bkash);
-      expect(find.text('Your appointment is booked!'), findsOneWidget);
+      expect(find.text('Enter your name'), findsOneWidget);
     },
   );
 
@@ -203,7 +204,7 @@ void main() {
       );
       addTearDown(router.dispose);
       await tester.pumpWidget(
-        doctorsTestScope(Sizer(builder: (_, _, _) => MyApp(router: router))),
+        doctorsTestScope(_scope(builder: (_, _, _) => MyApp(router: router))),
       );
       await tester.pumpAndSettle();
       expect(find.byType(BookAppointmentScreen), findsOneWidget);
@@ -214,7 +215,7 @@ void main() {
   testWidgets('Changing date clears the selected slot', (tester) async {
     final booking = draft();
     await tester.pumpWidget(
-      Sizer(
+      _scope(
         builder: (_, _, _) => MaterialApp(
           theme: AppTheme.light,
           home: AppointmentDateTimeScreen(draft: booking),
@@ -237,3 +238,8 @@ void main() {
     );
   });
 }
+
+Widget _scope({required ResponsiveBuilderType builder}) => ProviderScope(
+  overrides: [authSessionProvider.overrideWith((ref) => const Stream.empty())],
+  child: Sizer(builder: builder),
+);

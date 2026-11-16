@@ -15,12 +15,13 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/nursai_test_scope.dart';
 
-const intake = SymptomIntake(
+final intake = SymptomIntake(
   symptoms: 'Sore throat',
   age: 28,
-  duration: '1–3 days',
+  durationDays: 7,
+  medicalHistory: 'none',
+  currentMedications: ['none'],
   location: 'Dhaka',
-  breathingDifficulty: BreathingDifficulty.aLittle,
 );
 
 Map<String, Object?> payload() => {
@@ -53,8 +54,10 @@ void main() {
     expect(adapter.request!.uri.path, '/api/v1/triage');
     expect(adapter.request!.headers['Authorization'], 'Bearer token');
     expect(adapter.request!.data, {
-      'symptoms':
-          'Sore throat\nDuration: 1–3 days.\nBreathing difficulty: A little.',
+      'symptoms': 'Sore throat',
+      'duration_days': 7,
+      'medical_history': 'none',
+      'current_medications': ['none'],
       'age': 28,
       'location': 'Dhaka',
     });
@@ -65,6 +68,25 @@ void main() {
     expect(result.recommendedSpecialties, ['General Physician']);
     expect(result.redFlags, ['A red flag']);
     expect(() => result.redFlags.add('change'), throwsUnsupportedError);
+  });
+
+  test('optional history and medications can be left blank', () async {
+    await repository.assess(
+      SymptomIntake(
+        symptoms: ' Sore throat ',
+        age: 0,
+        durationDays: 0,
+        location: ' Dhaka ',
+      ),
+    );
+    expect(adapter.request!.data, {
+      'symptoms': 'Sore throat',
+      'age': 0,
+      'duration_days': 0,
+      'medical_history': '',
+      'current_medications': <String>[],
+      'location': 'Dhaka',
+    });
   });
 
   test(

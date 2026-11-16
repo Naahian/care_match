@@ -24,10 +24,18 @@ final accessTokenReaderProvider = Provider<AccessTokenReader>((ref) {
   return () => auth.getIdToken();
 });
 
+final apiSessionIdProvider = Provider<String? Function()>((ref) {
+  return () => ref.read(firebaseAuthServiceProvider).currentUser?.uid;
+});
+
 final dioProvider = Provider<Dio>((ref) {
   final dio = createDioClient(
     baseUrl: ref.watch(apiBaseUrlProvider),
     readAccessToken: ref.watch(accessTokenReaderProvider),
+    refreshAccessToken: () =>
+        ref.read(firebaseAuthServiceProvider).getIdToken(forceRefresh: true),
+    sessionId: ref.watch(apiSessionIdProvider),
+    onSessionExpired: () => ref.read(firebaseAuthServiceProvider).signOut(),
   );
   ref.onDispose(() => dio.close(force: true));
   return dio;

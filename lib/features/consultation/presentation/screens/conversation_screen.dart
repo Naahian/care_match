@@ -1,71 +1,101 @@
-import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-import 'package:sizer/sizer.dart';
+import 'dart:async';
 
-import '../../../../core/constants/app_routes.dart';
+import 'package:care_match/shared/widgets/care_app_bar.dart';
+import 'package:care_match/shared/widgets/doctor_avatar.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/constants.dart';
-import '../../../../shared/widgets/doctor_avatar.dart';
+import '../../../../shared/widgets/empty_state.dart';
+import '../../providers.dart';
+import '../controllers/conversation_controller.dart';
 import '../models/chat_message.dart';
 import '../widgets/chat_composer.dart';
 import '../widgets/chat_message_bubble.dart';
-import '../widgets/conversation.dart';
 
-/// A demo chat thread. Messages are kept locally while this screen is open.
-class ConversationScreen extends StatefulWidget {
-  const ConversationScreen({super.key, required this.conversation});
-
-  final Conversation conversation;
-
+class ConversationScreen extends ConsumerStatefulWidget {
+  const ConversationScreen({super.key, required this.chatId});
+  final String chatId;
   @override
-  State<ConversationScreen> createState() => _ConversationScreenState();
+  ConsumerState<ConversationScreen> createState() => _ConversationScreenState();
 }
 
-class _ConversationScreenState extends State<ConversationScreen> {
+class _ConversationScreenState extends ConsumerState<ConversationScreen>
+    with WidgetsBindingObserver {
   final _composer = TextEditingController();
   final _scrollController = ScrollController();
-  late final List<ChatMessage> _messages = [
-    const ChatMessage(
-      text: 'Hello! Welcome to your follow-up consultation. How are you today?',
-      time: '10:18 AM',
-    ),
-    const ChatMessage(
-      text: 'Hello, doctor. Thank you for checking in.',
-      time: '10:20 AM',
-      isFromPatient: true,
-    ),
-    const ChatMessage(
-      text: 'I have a few questions about our last consultation.',
-      time: '10:21 AM',
-      isFromPatient: true,
-    ),
-    ChatMessage(text: widget.conversation.lastMessage, time: '10:24 AM'),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    ref.listenManual(consultationUserProvider, (_, uid) {
+      _composer.clear();
+      scheduleMicrotask(() {
+        if (mounted && ref.read(consultationUserProvider) == uid) {
+          unawaited(
+            ref
+                .read(conversationControllerProvider(widget.chatId).notifier)
+                .open(),
+          );
+        }
+      });
+    }, fireImmediately: true);
+  }
 
-  void _sendMessage() {
-    final text = _composer.text.trim();
-    if (text.isEmpty) return;
-    setState(() {
-      _messages.add(
-        ChatMessage(
-          text: text,
-          time: TimeOfDay.now().format(context),
-          isFromPatient: true,
-        ),
+  @override
+  void didUpdateWidget(covariant ConversationScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.chatId != widget.chatId) {
+      _composer.clear();
+      scheduleMicrotask(() {
+        if (mounted) {
+          unawaited(
+            ref
+                .read(conversationControllerProvider(widget.chatId).notifier)
+                .open(),
+          );
+        }
+      });
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      unawaited(
+        ref.read(conversationControllerProvider(widget.chatId).notifier).open(),
       );
-    });
-    _composer.clear();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || !_scrollController.hasClients) return;
-      _scrollController.animateTo(
-        0,
-        duration: AppConstants.animationDuration,
-        curve: Curves.easeOut,
-      );
-    });
+    }
+  }
+
+  Future<void> _send() async {
+    final text = _composer.text;
+    final chatId = widget.chatId;
+    final uid = ref.read(consultationUserProvider);
+    final controller = ref.read(
+      conversationControllerProvider(widget.chatId).notifier,
+    );
+    if (await controller.send(text)) {
+      if (!mounted ||
+          widget.chatId != chatId ||
+          ref.read(consultationUserProvider) != uid) {
+        return;
+      }
+      if (_composer.text == text) _composer.clear();
+      if (_scrollController.hasClients) {
+        unawaited(
+          _scrollController.animateTo(
+            0,
+            duration: AppConstants.animationDuration,
+            curve: Curves.easeOut,
+          ),
+        );
+      }
+    }
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _composer.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -73,16 +103,45 @@ class _ConversationScreenState extends State<ConversationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final state = ref.watch(conversationControllerProvider(widget.chatId));
+    final controller = ref.read(
+      conversationControllerProvider(widget.chatId).notifier,
+    );
+    final uid = ref.watch(consultationUserProvider);
+    final profiles = uid == null
+        ? null
+        : ref.watch(consultationDoctorsProvider).asData?.value;
+    final peer = state.chat == null || uid == null
+        ? null
+        : profiles?[state.chat!.otherParticipant(uid)];
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Conversation'),
-        actions: [
-          IconButton(
-            tooltip: 'Start video consult',
-            onPressed: () => context.pushNamed(AppRoutes.video),
-            icon: const Icon(Icons.videocam_outlined),
-          ),
-        ],
+      appBar: careAppBar(
+        context,
+        title: Row(
+          children: [
+            DoctorAvatar(
+              doctorName: peer?.name ?? 'Conversation',
+              photoUrl: peer?.photoUrl,
+              radius: 21,
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    peer?.name ?? 'Conversation',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  Text(
+                    'Chat consultation',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
       body: SafeArea(
         child: Center(
@@ -90,73 +149,120 @@ class _ConversationScreenState extends State<ConversationScreen> {
             constraints: const BoxConstraints(maxWidth: 600),
             child: Column(
               children: [
-                _buildDoctorHeader(context),
-                const Divider(),
-                Padding(
-                  padding: AppSpacing.page,
-                  child: Text(
-                    'Demo conversation • Messages stay on this screen only',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ),
-                Expanded(
-                  child: ListView.separated(
-                    controller: _scrollController,
-                    reverse: true,
-                    padding: AppSpacing.page,
-                    itemCount: _messages.length,
-                    separatorBuilder: (_, _) =>
-                        const SizedBox(height: AppSpacing.md),
-                    itemBuilder: (_, index) => ChatMessageBubble(
-                      message: _messages[_messages.length - 1 - index],
+                if (state.isLoading) const LinearProgressIndicator(),
+                if (state.error case final error?)
+                  Padding(
+                    padding: AppSpacing.gutter,
+                    child: Column(
+                      children: [
+                        Text(error),
+                        if (uid != null)
+                          TextButton(
+                            onPressed: controller.open,
+                            child: const Text('Retry'),
+                          ),
+                      ],
                     ),
                   ),
+                if (state.liveError case final error?)
+                  Padding(
+                    padding: AppSpacing.gutter,
+                    child: Column(
+                      children: [
+                        Text(error),
+                        TextButton(
+                          onPressed: controller.open,
+                          child: const Text('Reconnect'),
+                        ),
+                      ],
+                    ),
+                  ),
+                if (state.nextCursor != null)
+                  TextButton(
+                    onPressed: state.isLoadingMore
+                        ? null
+                        : controller.loadOlder,
+                    child: Text(
+                      state.isLoadingMore ? 'Loading…' : 'Load older messages',
+                    ),
+                  ),
+                Expanded(
+                  child: state.messages.isEmpty
+                      ? state.hasLoaded
+                            ? const SingleChildScrollView(
+                                child: EmptyState(
+                                  icon: Icons.chat_bubble_outline_rounded,
+                                  message: 'No messages yet. Say hello!',
+                                ),
+                              )
+                            : const SizedBox.shrink()
+                      : ListView.separated(
+                          controller: _scrollController,
+                          reverse: true,
+                          padding: const EdgeInsets.all(AppSpacing.lg),
+                          itemCount: state.messages.length,
+                          separatorBuilder: (_, _) =>
+                              const SizedBox(height: AppSpacing.md),
+                          itemBuilder: (context, index) {
+                            final message = state.messages[index];
+                            final date = message.createdAt.toLocal();
+                            final older = index + 1 < state.messages.length
+                                ? state.messages[index + 1].createdAt.toLocal()
+                                : null;
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                if (!DateUtils.isSameDay(date, older))
+                                  Padding(
+                                    padding: const EdgeInsets.only(
+                                      bottom: AppSpacing.md,
+                                    ),
+                                    child: Text(
+                                      MaterialLocalizations.of(
+                                        context,
+                                      ).formatShortDate(date),
+                                      textAlign: TextAlign.center,
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.bodySmall,
+                                    ),
+                                  ),
+                                ChatMessageBubble(
+                                  message: ChatMessage(
+                                    text: message.text,
+                                    time: TimeOfDay.fromDateTime(
+                                      date,
+                                    ).format(context),
+                                    isMine: message.senderUid == uid,
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
+                        ),
                 ),
-                const Divider(),
-                ChatComposer(controller: _composer, onSend: _sendMessage),
+                if (state.sendError case final error?)
+                  Padding(
+                    padding: AppSpacing.gutter,
+                    child: Text(
+                      '$error${state.pending == null ? '' : ' Retry sending the same message.'}',
+                    ),
+                  ),
+                ChatComposer(
+                  controller: _composer,
+                  onSend: _send,
+                  enabled:
+                      state.chat != null &&
+                      uid != null &&
+                      !state.isLoading &&
+                      !state.isSending,
+                  readOnly: state.isSending || state.pending != null,
+                  isSending: state.isSending,
+                ),
               ],
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildDoctorHeader(BuildContext context) {
-    final theme = Theme.of(context);
-    final conversation = widget.conversation;
-    return Padding(
-      padding: AppSpacing.page,
-      child: Row(
-        children: [
-          DoctorAvatar(
-            doctorName: conversation.doctorName,
-            radius: 7.w.clamp(24.0, 32.0),
-          ),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  conversation.doctorName,
-                  style: theme.textTheme.titleMedium,
-                ),
-                Text(conversation.specialty, style: theme.textTheme.bodySmall),
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  conversation.isOnline ? 'Online now' : 'Currently offline',
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: conversation.isOnline
-                        ? theme.colorScheme.secondary
-                        : theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }

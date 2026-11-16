@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Lets a page scroll on very short screens while still allowing
-/// [Expanded] children to fill the available height on normal ones.
+/// Keeps the welcome content scrollable and at least as tall as its viewport.
 class ScrollableFill extends StatelessWidget {
   const ScrollableFill({super.key, required this.child});
 
@@ -14,7 +13,7 @@ class ScrollableFill extends StatelessWidget {
         return SingleChildScrollView(
           child: ConstrainedBox(
             constraints: BoxConstraints(minHeight: constraints.maxHeight),
-            child: IntrinsicHeight(child: child),
+            child: child,
           ),
         );
       },

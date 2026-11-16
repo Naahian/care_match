@@ -3,9 +3,9 @@ import 'package:care_match/core/constants/app_routes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
-import 'package:sizer/sizer.dart';
 import '../models/symptom_intake.dart';
 import '../widgets/symptom_question_card.dart';
+import '../widgets/symptom_flow_header.dart';
 
 class SymptomEntryScreen extends StatefulWidget {
   const SymptomEntryScreen({super.key, this.initialSymptoms = ''});
@@ -19,78 +19,144 @@ class _SymptomEntryScreenState extends State<SymptomEntryScreen> {
   late final _symptoms = TextEditingController(text: widget.initialSymptoms);
   final _age = TextEditingController();
   final _location = TextEditingController();
-  String? _duration;
-  BreathingDifficulty? _breathing;
-  bool _showBreathingError = false;
+  final _durationDays = TextEditingController();
+  final _medicalHistory = TextEditingController();
+  final _currentMedications = TextEditingController();
   @override
   void dispose() {
     _symptoms.dispose();
     _age.dispose();
     _location.dispose();
+    _durationDays.dispose();
+    _medicalHistory.dispose();
+    _currentMedications.dispose();
     super.dispose();
   }
 
   void _continue() {
-    final valid = _formKey.currentState!.validate();
-    setState(() => _showBreathingError = _breathing == null);
-    if (!valid || _breathing == null) return;
+    if (!_formKey.currentState!.validate()) return;
     FocusScope.of(context).unfocus();
     context.pushNamed(
       AppRoutes.symptomAssessment,
       extra: SymptomIntake(
         symptoms: _symptoms.text.trim(),
         age: int.parse(_age.text.trim()),
-        duration: _duration!,
+        durationDays: int.parse(_durationDays.text.trim()),
+        medicalHistory: _medicalHistory.text.trim(),
+        currentMedications: _currentMedications.text
+            .split(RegExp(r'[\n,]'))
+            .map((value) => value.trim())
+            .where((value) => value.isNotEmpty)
+            .toList(),
         location: _location.text.trim(),
-        breathingDifficulty: _breathing!,
       ),
     );
   }
+
+  Widget _ageField() => TextFormField(
+    controller: _age,
+    keyboardType: TextInputType.number,
+    inputFormatters: [
+      FilteringTextInputFormatter.digitsOnly,
+      LengthLimitingTextInputFormatter(3),
+    ],
+    validator: (value) {
+      final age = int.tryParse(value ?? '');
+      return age == null || age < 0 || age > 130
+          ? 'Enter an age between 0 and 130.'
+          : null;
+    },
+    decoration: const InputDecoration(
+      labelText: 'Age',
+      hintText: 'Your age in years',
+    ),
+  );
+
+  Widget _durationField() => TextFormField(
+    controller: _durationDays,
+    keyboardType: TextInputType.number,
+    inputFormatters: [
+      FilteringTextInputFormatter.digitsOnly,
+      LengthLimitingTextInputFormatter(4),
+    ],
+    validator: (value) {
+      final days = int.tryParse(value ?? '');
+      return days == null || days < 0 || days > 3650
+          ? 'Enter a duration between 0 and 3650 days.'
+          : null;
+    },
+    decoration: const InputDecoration(
+      labelText: 'Duration in days',
+      hintText: 'How many days have you had symptoms?',
+    ),
+  );
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(),
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 600),
             child: Column(
               children: [
+                SymptomFlowHeader(
+                  title: 'Symptom check',
+                  currentStep: 1,
+                  onBack: Navigator.of(context).canPop()
+                      ? () => Navigator.of(context).pop()
+                      : null,
+                ),
                 Expanded(
                   child: Form(
                     key: _formKey,
                     child: ListView(
-                      padding: AppSpacing.page,
+                      padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
                       children: [
-                        Text(
-                          'How are you feeling today?',
-                          style: theme.textTheme.headlineLarge?.copyWith(
-                            color: theme.colorScheme.onPrimaryContainer,
-                          ),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                'How are you\nfeeling today?',
+                                style: theme.textTheme.headlineLarge?.copyWith(
+                                  color: theme.colorScheme.onPrimaryContainer,
+                                ),
+                              ),
+                            ),
+                            Container(
+                              width: 68,
+                              height: 68,
+                              decoration: BoxDecoration(
+                                color: theme.colorScheme.primary,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.smart_toy_rounded,
+                                color: theme.colorScheme.onPrimary,
+                                size: 36,
+                              ),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: AppSpacing.sm),
                         Text(
-                          'Describe your symptoms in your own words and our AI will guide you.',
+                          'Describe your symptoms in your own\nwords and our AI will guide you.',
                           style: theme.textTheme.bodyLarge?.copyWith(
                             color: theme.colorScheme.onSurfaceVariant,
                           ),
                         ),
-                        Image.asset(
-                          'assets/images/symptom_check.png',
-                          height: 15.h.clamp(80.0, 160.0),
-                          fit: BoxFit.contain,
-                          excludeFromSemantics: true,
-                        ),
+                        const SizedBox(height: AppSpacing.lg),
                         SymptomQuestionCard(
+                          step: '01',
                           title: "Tell us what’s bothering you",
                           icon: Icons.edit_note_rounded,
                           child: TextFormField(
                             controller: _symptoms,
                             minLines: 3,
                             maxLines: 5,
-                            maxLength: 500,
+                            maxLength: 4000,
                             validator: (value) =>
                                 value == null || value.trim().isEmpty
                                 ? 'Describe your symptoms.'
@@ -102,67 +168,49 @@ class _SymptomEntryScreenState extends State<SymptomEntryScreen> {
                         ),
                         const SizedBox(height: AppSpacing.sm),
                         SymptomQuestionCard(
+                          step: '02',
                           title: 'Age and duration',
                           icon: Icons.person_outline_rounded,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              TextFormField(
-                                controller: _age,
-                                keyboardType: TextInputType.number,
-                                inputFormatters: [
-                                  FilteringTextInputFormatter.digitsOnly,
-                                  LengthLimitingTextInputFormatter(3),
+                          child: LayoutBuilder(
+                            builder: (context, constraints) {
+                              if (constraints.maxWidth < 300) {
+                                return Column(
+                                  children: [
+                                    _ageField(),
+                                    const SizedBox(height: AppSpacing.sm),
+                                    _durationField(),
+                                  ],
+                                );
+                              }
+                              return Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Expanded(child: _ageField()),
+                                  const SizedBox(width: AppSpacing.sm),
+                                  Expanded(child: _durationField()),
                                 ],
-                                validator: (value) {
-                                  final age = int.tryParse(value ?? '');
-                                  return age == null || age < 1 || age > 120
-                                      ? 'Enter an age between 1 and 120.'
-                                      : null;
-                                },
-                                decoration: const InputDecoration(
-                                  labelText: 'Age',
-                                  hintText: 'Your age in years',
-                                  suffixText: 'years',
-                                ),
-                              ),
-                              const SizedBox(height: AppSpacing.md),
-                              DropdownButtonFormField<String>(
-                                initialValue: _duration,
-                                isExpanded: true,
-                                decoration: const InputDecoration(
-                                  labelText: 'Duration',
-                                  hintText: 'How long have you had symptoms?',
-                                ),
-                                items:
-                                    const [
-                                          'Less than a day',
-                                          '1–3 days',
-                                          '4–7 days',
-                                          '1–2 weeks',
-                                          'More than 2 weeks',
-                                        ]
-                                        .map(
-                                          (duration) => DropdownMenuItem(
-                                            value: duration,
-                                            child: Text(duration),
-                                          ),
-                                        )
-                                        .toList(),
-                                validator: (value) =>
-                                    value == null ? 'Select a duration.' : null,
-                                onChanged: (value) =>
-                                    setState(() => _duration = value),
-                              ),
-                            ],
+                              );
+                            },
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.only(
+                            left: 2,
+                            top: AppSpacing.xs,
+                          ),
+                          child: Text(
+                            'Enter 0 for less than a day.',
+                            style: theme.textTheme.bodySmall,
                           ),
                         ),
                         const SizedBox(height: AppSpacing.sm),
                         SymptomQuestionCard(
+                          step: '03',
                           title: 'Location',
                           icon: Icons.location_on_outlined,
                           child: TextFormField(
                             controller: _location,
+                            maxLength: 200,
                             textCapitalization: TextCapitalization.words,
                             validator: (value) =>
                                 value == null || value.trim().isEmpty
@@ -175,40 +223,35 @@ class _SymptomEntryScreenState extends State<SymptomEntryScreen> {
                         ),
                         const SizedBox(height: AppSpacing.sm),
                         SymptomQuestionCard(
-                          title: 'Are you having trouble breathing?',
-                          icon: Icons.air_rounded,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Wrap(
-                                spacing: AppSpacing.sm,
-                                runSpacing: AppSpacing.sm,
-                                children: [
-                                  for (final option
-                                      in BreathingDifficulty.values)
-                                    ChoiceChip(
-                                      label: Text(switch (option) {
-                                        BreathingDifficulty.no => 'No',
-                                        BreathingDifficulty.aLittle =>
-                                          'A little',
-                                        BreathingDifficulty.yes => 'Yes',
-                                      }),
-                                      selected: _breathing == option,
-                                      onSelected: (_) => setState(() {
-                                        _breathing = option;
-                                        _showBreathingError = false;
-                                      }),
-                                    ),
-                                ],
-                              ),
-                              if (_showBreathingError)
-                                Text(
-                                  'Select an answer.',
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    color: theme.colorScheme.error,
-                                  ),
-                                ),
-                            ],
+                          step: 'Optional',
+                          title: 'Medical history',
+                          icon: Icons.medical_information_outlined,
+                          child: TextFormField(
+                            controller: _medicalHistory,
+                            minLines: 2,
+                            maxLines: 4,
+                            maxLength: 2000,
+                            decoration: const InputDecoration(
+                              labelText: 'Medical history (optional)',
+                              hintText: 'Previous conditions, or none',
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        SymptomQuestionCard(
+                          step: 'Optional',
+                          title: 'Current medications',
+                          icon: Icons.medication_outlined,
+                          child: TextFormField(
+                            controller: _currentMedications,
+                            minLines: 2,
+                            maxLines: 5,
+                            decoration: const InputDecoration(
+                              labelText: 'Current medications (optional)',
+                              hintText: 'Medication names, or none',
+                              helperText:
+                                  'Enter one medication per line or separate with commas.',
+                            ),
                           ),
                         ),
                       ],
@@ -216,18 +259,23 @@ class _SymptomEntryScreenState extends State<SymptomEntryScreen> {
                   ),
                 ),
                 Padding(
-                  padding: AppSpacing.page,
+                  padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
                   child: SizedBox(
                     width: double.infinity,
-                    child: FilledButton.icon(
+                    child: FilledButton(
                       onPressed: _continue,
                       style: FilledButton.styleFrom(
+                        minimumSize: const Size.fromHeight(56),
                         shape: const RoundedRectangleBorder(
-                          borderRadius: AppRadius.chip,
+                          borderRadius: AppRadius.card,
                         ),
                       ),
-                      icon: const Icon(Icons.arrow_forward_rounded),
-                      label: const Text('Continue'),
+                      child: Row(
+                        children: const [
+                          Expanded(child: Text('Continue')),
+                          Icon(Icons.arrow_forward_rounded),
+                        ],
+                      ),
                     ),
                   ),
                 ),
