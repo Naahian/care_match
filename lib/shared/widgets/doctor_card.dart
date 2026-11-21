@@ -39,9 +39,6 @@ class DoctorCard extends StatelessWidget {
               : scheme.onTertiaryContainer)
         : scheme.onSecondaryContainer;
 
-    final useSpecialtyIcon =
-        (directoryStyle || featured) &&
-        (doctor.photoUrl?.trim().isEmpty ?? true);
     return Card(
       shape: directoryStyle || featured
           ? const RoundedRectangleBorder(borderRadius: AppRadius.sheet)
@@ -55,34 +52,11 @@ class DoctorCard extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  if (useSpecialtyIcon)
-                    Container(
-                      width: 52,
-                      height: 52,
-                      decoration: BoxDecoration(
-                        color: featured
-                            ? (highlightAlt
-                                  ? Color.alphaBlend(
-                                      scheme.primary.withValues(alpha: .13),
-                                      scheme.surface,
-                                    )
-                                  : scheme.primaryContainer)
-                            : chipBackground,
-                        borderRadius: AppRadius.card,
-                      ),
-                      child: Icon(
-                        highlightAlt
-                            ? Icons.water_drop_outlined
-                            : Icons.medical_services_outlined,
-                        color: featured ? scheme.primary : chipForeground,
-                      ),
-                    )
-                  else
-                    DoctorAvatar(
-                      doctorName: doctor.name,
-                      photoUrl: doctor.photoUrl,
-                      radius: 26,
-                    ),
+                  DoctorAvatar(
+                    doctorName: doctor.name,
+                    photoUrl: doctor.photoUrl,
+                    radius: 26,
+                  ),
                   const SizedBox(width: AppSpacing.md),
                   Expanded(
                     child: Column(
