@@ -45,6 +45,36 @@ void main() {
   });
 
   testWidgets(
+    'home and directory cards use the regular avatar when a photo is missing',
+    (tester) async {
+      final sections = <Widget>[
+        FeaturedDoctorsSection(
+          state: const HomeState(
+            hasLoaded: true,
+            doctors: [FeaturedDoctor(id: 'doctor', name: 'Doctor')],
+          ),
+          onRetry: () {},
+        ),
+        DoctorsResults(
+          state: DoctorsState(
+            hasLoaded: true,
+            doctors: [Doctor(id: 'doctor', name: 'Doctor')],
+          ),
+          onRetry: () {},
+        ),
+      ];
+
+      for (final section in sections) {
+        await tester.pumpWidget(MaterialApp(home: Scaffold(body: section)));
+        expect(find.byType(DoctorAvatar), findsOneWidget);
+        expect(find.byIcon(Icons.person_outline_rounded), findsOneWidget);
+        expect(find.byIcon(Icons.medical_services_outlined), findsNothing);
+        expect(find.byIcon(Icons.water_drop_outlined), findsNothing);
+      }
+    },
+  );
+
+  testWidgets(
     'missing and blank photos show a person icon even for sample names',
     (tester) async {
       for (final url in [null, '', '   ']) {
