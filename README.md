@@ -2,6 +2,8 @@
 
 CareMatch is a Flutter app that helps patients find the right doctors for their specific health issue, book appointments, and consult by chat or video. Doctors have a separate dashboard for managing their schedule and patient appointments.
 
+<img width="1672" height="941" alt="image" src="https://github.com/user-attachments/assets/1a92aa26-5b45-493b-a20e-2569e8eccc3a" />
+
 ## What you can do
 
 | Patients | Doctors |
