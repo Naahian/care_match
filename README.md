@@ -1,4 +1,10 @@
-# CareMatch
+
+# CareMatch 
+![Flutter](https://img.shields.io/badge/Flutter-3.11.x-blue)
+![Riverpod](https://img.shields.io/badge/Riverpod-3.4.x-blue)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.115.x-teal)
+![Firebase](https://img.shields.io/badge/Firebase-15.33.x-orange)
+![Agora](https://img.shields.io/badge/Agora_RTC-6.6.x-purple)
 
 CareMatch is a Flutter app that helps patients find the right doctors for their specific health issue, book appointments, and consult by chat or video. Doctors have a separate dashboard for managing their schedule and patient appointments.
 
